@@ -1,0 +1,262 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'applebite-php-app'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = 'applebite-container'
+        TEST_SERVER = '192.168.128.187'
+        PROD_SERVER = '192.168.128.187'  // Add production server
+        DEPLOY_TO_PROD = 'true'  // Set to 'false' to skip prod deployment
+    }
+
+    stages {
+        stage('Job 1: Setup Puppet Agent') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 1: Installing and Configuring Puppet Agent on Test Server"
+                    echo "=========================================="
+
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                            # Install Puppet Agent
+                            if ! command -v puppet &> /dev/null; then
+                                echo "Installing Puppet Agent..."
+                                wget https://apt.puppet.com/puppet7-release-focal.deb
+                                sudo dpkg -i puppet7-release-focal.deb
+                                sudo apt-get update
+                                sudo apt-get install -y puppet-agent
+                                echo "Puppet Agent installed successfully"
+                            else
+                                echo "Puppet Agent already installed"
+                            fi
+
+                            # Verify installation
+                            /opt/puppetlabs/bin/puppet --version
+EOF
+                    '''
+                }
+            }
+        }
+
+        stage('Job 2: Install Docker via Ansible') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 2: Installing Docker on Test Server"
+                    echo "=========================================="
+
+                    sh '''
+                        # Run Ansible playbook to install Docker on test server
+                        cd ansible
+                        ansible-playbook -i inventory/hosts playbooks/install-docker.yml --limit test_server
+                    '''
+                }
+            }
+        }
+
+        stage('Job 3: Build and Deploy to Test Server') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 3: Building and Deploying Docker Container to Test Server"
+                    echo "=========================================="
+
+                    try {
+                        // Pull latest code from Git
+                        echo "Pulling latest code from Git..."
+                        checkout scm
+
+                        // Build Docker image on test server
+                        sh '''
+                            # Copy files to test server
+                            scp -o StrictHostKeyChecking=no -r . ${TEST_SERVER}:~/applebite-app/
+
+                            # Build and run Docker container on test server
+                            ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                                cd ~/applebite-app
+
+                                # Stop and remove old container if exists
+                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                                docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                                # Build new Docker image
+                                echo "Building Docker image..."
+                                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                                docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+
+                                # Run new container
+                                echo "Running Docker container..."
+                                docker run -d \\
+                                    --name ${CONTAINER_NAME} \\
+                                    -p 80:80 \\
+                                    -e APP_VERSION=${DOCKER_TAG} \\
+                                    ${DOCKER_IMAGE}:latest
+
+                                # Verify container is running
+                                sleep 5
+                                docker ps | grep ${CONTAINER_NAME}
+
+                                echo "Application deployed successfully on Test Server!"
+EOF
+                        '''
+
+                        // Verify deployment on test server
+                        sh '''
+                            echo "Verifying deployment on Test Server..."
+                            curl -f http://${TEST_SERVER}/ || exit 1
+                            echo "Test Server deployment verification successful!"
+                        '''
+
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error("Test Server deployment failed: ${e.message}")
+                    }
+                }
+            }
+
+            post {
+                failure {
+                    script {
+                        echo "Job 3 failed, triggering cleanup..."
+                    }
+                }
+            }
+        }
+
+        stage('Job 4: Deploy to Production Server') {
+            when {
+                expression { env.DEPLOY_TO_PROD == 'true' }
+            }
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 4: Deploying to Production Server"
+                    echo "=========================================="
+
+                    try {
+                        // Ensure Docker is installed on prod server
+                        sh '''
+                            cd ansible
+                            ansible-playbook -i inventory/hosts playbooks/install-docker.yml --limit prod_server
+                        '''
+
+                        // Deploy to production server
+                        sh '''
+                            # Copy files to production server
+                            scp -o StrictHostKeyChecking=no -r . ${PROD_SERVER}:~/applebite-app/
+
+                            # Build and run Docker container on production server
+                            ssh -o StrictHostKeyChecking=no ${PROD_SERVER} << 'EOF'
+                                cd ~/applebite-app
+
+                                # Stop and remove old container if exists
+                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                                docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                                # Build new Docker image
+                                echo "Building Docker image on Production..."
+                                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                                docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+
+                                # Run new container
+                                echo "Running Docker container on Production..."
+                                docker run -d \\
+                                    --name ${CONTAINER_NAME} \\
+                                    -p 80:80 \\
+                                    -e APP_VERSION=${DOCKER_TAG} \\
+                                    -e ENVIRONMENT=production \\
+                                    --restart unless-stopped \\
+                                    ${DOCKER_IMAGE}:latest
+
+                                # Verify container is running
+                                sleep 5
+                                docker ps | grep ${CONTAINER_NAME}
+
+                                echo "Application deployed successfully on Production Server!"
+EOF
+                        '''
+
+                        // Verify deployment on production server
+                        sh '''
+                            echo "Verifying deployment on Production Server..."
+                            curl -f http://${PROD_SERVER}/ || exit 1
+                            echo "Production Server deployment verification successful!"
+                        '''
+
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error("Production deployment failed: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        stage('Job 5: Cleanup on Failure') {
+            when {
+                expression { currentBuild.result == 'FAILURE' }
+            }
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 5: Cleaning up failed deployment"
+                    echo "=========================================="
+
+                    // Cleanup test server
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                            # Stop and remove failed container
+                            docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                            docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                            # Remove failed images
+                            docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} 2>/dev/null || true
+
+                            echo "Test Server cleanup completed"
+EOF
+                    ''' || true
+
+                    // Cleanup production server if deployment to prod was attempted
+                    sh '''
+                        if [ "${DEPLOY_TO_PROD}" = "true" ]; then
+                            ssh -o StrictHostKeyChecking=no ${PROD_SERVER} << 'EOF'
+                                # Stop and remove failed container
+                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                                docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                                # Remove failed images
+                                docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} 2>/dev/null || true
+
+                                echo "Production Server cleanup completed"
+EOF
+                        fi
+                    ''' || true
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "=========================================="
+            echo "Pipeline completed successfully!"
+            echo "Test Server: http://${TEST_SERVER}"
+            if (env.DEPLOY_TO_PROD == 'true') {
+                echo "Production Server: http://${PROD_SERVER}"
+            }
+            echo "=========================================="
+        }
+
+        failure {
+            echo "=========================================="
+            echo "Pipeline failed. Check logs for details."
+            echo "Cleanup has been performed on affected servers."
+            echo "=========================================="
+        }
+
+        always {
+            cleanWs()
+        }
+    }
+}

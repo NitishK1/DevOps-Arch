@@ -1,0 +1,72 @@
+# Docker Compose for Production Environment
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    container_name: applebite-prod-web
+    ports:
+      - "8082:80"
+    volumes:
+      - ./logs:/var/log/apache2
+    environment:
+      - ENVIRONMENT=production
+      - PHP_DISPLAY_ERRORS=Off
+      - PHP_ERROR_REPORTING=E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE
+    networks:
+      - applebite-prod-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  db:
+    image: mysql:8.0
+    container_name: applebite-prod-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PROD_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: applebite_prod
+      MYSQL_USER: applebite_user
+      MYSQL_PASSWORD: ${PROD_DB_PASSWORD}
+    ports:
+      - "3309:3306"
+    volumes:
+      - prod-db-data:/var/lib/mysql
+      - ./mysql-config:/etc/mysql/conf.d
+    networks:
+      - applebite-prod-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  applebite-prod-network:
+    driver: bridge
+
+volumes:
+  prod-db-data:

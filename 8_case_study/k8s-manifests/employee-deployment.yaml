@@ -1,0 +1,27 @@
+apiVersion: apps/v1 # Kubernetes API version for Deployment resources
+kind: Deployment # Type of Kubernetes resource to create
+metadata: # Metadata provides identifying information about the resource
+  name: employee-app # Name of the deployment (must be unique in namespace)
+  labels: # Labels are key-value pairs used to organize and select resources
+    app: employee-app
+spec: # Spec defines the desired state of the deployment
+  replicas: 1 # Number of pod replicas to run
+  selector: # Selector determines which pods belong to this deployment
+    matchLabels: # Match pods with these labels
+      app: employee-app
+  template: # Template defines the pod specification
+    metadata: # Metadata for the pods created by this deployment
+      labels: # Labels applied to each pod (must match selector)
+        app: employee-app
+    spec: # Spec defines what runs inside the pods
+      containers: # List of containers in the pod
+        - name: employee-app # Container name (must be unique within the pod)
+          image: devopsedu/employee:latest # Docker image to use (latest tag pulls most recent version)
+          ports: # Ports that the container exposes
+            - containerPort: 8888 # Port number the container listens on
+              name: http # Optional name for the port
+          env: # Environment variables passed to the container
+            - name: MONGO_HOST # MongoDB hostname (matches mongo service name for DNS resolution)
+              value: "mongo"
+            - name: MONGO_PORT # MongoDB port number
+              value: "27017"

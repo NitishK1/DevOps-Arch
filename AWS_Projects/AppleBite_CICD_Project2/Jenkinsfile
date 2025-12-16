@@ -1,0 +1,172 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'applebite-php-app'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = 'applebite-container'
+        TEST_SERVER = '192.168.128.187'
+    }
+
+    stages {
+        stage('Job 1: Setup Puppet Agent') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 1: Installing and Configuring Puppet Agent"
+                    echo "=========================================="
+
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                            # Install Puppet Agent
+                            if ! command -v puppet &> /dev/null; then
+                                echo "Installing Puppet Agent..."
+                                wget https://apt.puppet.com/puppet7-release-focal.deb
+                                sudo dpkg -i puppet7-release-focal.deb
+                                sudo apt-get update
+                                sudo apt-get install -y puppet-agent
+                                echo "Puppet Agent installed successfully"
+                            else
+                                echo "Puppet Agent already installed"
+                            fi
+
+                            # Verify installation
+                            /opt/puppetlabs/bin/puppet --version
+EOF
+                    '''
+                }
+            }
+        }
+
+        stage('Job 2: Install Docker via Ansible') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 2: Installing Docker on Test Server"
+                    echo "=========================================="
+
+                    sh '''
+                        # Run Ansible playbook to install Docker
+                        cd ansible
+                        ansible-playbook -i inventory/hosts playbooks/install-docker.yml
+                    '''
+                }
+            }
+        }
+
+        stage('Job 3: Build and Deploy Application') {
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 3: Building and Deploying Docker Container"
+                    echo "=========================================="
+
+                    try {
+                        // Pull latest code from Git
+                        echo "Pulling latest code from Git..."
+                        checkout scm
+
+                        // Build Docker image on test server
+                        sh '''
+                            # Copy files to test server
+                            scp -o StrictHostKeyChecking=no -r . ${TEST_SERVER}:~/applebite-app/
+
+                            # Build and run Docker container on test server
+                            ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                                cd ~/applebite-app
+
+                                # Stop and remove old container if exists
+                                docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                                docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                                # Build new Docker image
+                                echo "Building Docker image..."
+                                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                                docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+
+                                # Run new container
+                                echo "Running Docker container..."
+                                docker run -d \\
+                                    --name ${CONTAINER_NAME} \\
+                                    -p 80:80 \\
+                                    -e APP_VERSION=${DOCKER_TAG} \\
+                                    ${DOCKER_IMAGE}:latest
+
+                                # Verify container is running
+                                sleep 5
+                                docker ps | grep ${CONTAINER_NAME}
+
+                                echo "Application deployed successfully!"
+EOF
+                        '''
+
+                        // Verify deployment
+                        sh '''
+                            echo "Verifying deployment..."
+                            curl -f http://${TEST_SERVER}/ || exit 1
+                            echo "Deployment verification successful!"
+                        '''
+
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error("Deployment failed: ${e.message}")
+                    }
+                }
+            }
+
+            post {
+                failure {
+                    script {
+                        echo "Job 3 failed, triggering cleanup..."
+                        build job: 'Job 4: Cleanup', wait: false
+                    }
+                }
+            }
+        }
+
+        stage('Job 4: Cleanup on Failure') {
+            when {
+                expression { currentBuild.result == 'FAILURE' }
+            }
+            steps {
+                script {
+                    echo "=========================================="
+                    echo "Job 4: Cleaning up failed deployment"
+                    echo "=========================================="
+
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${TEST_SERVER} << 'EOF'
+                            # Stop and remove failed container
+                            docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                            docker rm ${CONTAINER_NAME} 2>/dev/null || true
+
+                            # Remove failed images
+                            docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} 2>/dev/null || true
+
+                            echo "Cleanup completed"
+EOF
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "=========================================="
+            echo "Pipeline completed successfully!"
+            echo "Application is running at: http://${TEST_SERVER}"
+            echo "=========================================="
+        }
+
+        failure {
+            echo "=========================================="
+            echo "Pipeline failed. Check logs for details."
+            echo "=========================================="
+        }
+
+        always {
+            cleanWs()
+        }
+    }
+}

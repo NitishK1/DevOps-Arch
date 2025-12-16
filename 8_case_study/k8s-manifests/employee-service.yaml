@@ -1,0 +1,15 @@
+apiVersion: v1 # Kubernetes API version for Service resources
+kind: Service # Type of Kubernetes resource to create
+metadata: # Metadata provides identifying information about the resource
+  name: employee-app # Name of the service (used for DNS resolution within cluster)
+  labels: # Labels for organizing and selecting this service
+    app: employee-app
+spec: # Spec defines the desired state of the service
+  type: NodePort # Service type (NodePort = accessible from outside cluster via node IP:nodePort)
+  ports: # Ports that this service exposes
+    - port: 8888 # Port that the service listens on (cluster-internal access)
+      targetPort: 8888 # Port on the target pod to forward traffic to
+      nodePort: 30888 # Port exposed on each cluster node for external access (30000-32767)
+      protocol: TCP # Network protocol (TCP or UDP)
+  selector: # Selector determines which pods receive traffic from this service
+    app: employee-app # Route traffic to pods with this label

@@ -1,0 +1,437 @@
+================================================================================
+KUBERNETES ASSIGNMENT DEMONSTRATION GUIDE
+Employee Application Deployment with MongoDB
+================================================================================
+
+INSTRUCTOR DEMONSTRATION SCRIPT
+Date: December 9, 2025
+Student: [Your Name]
+Assignment: Deploy Multi-tier NodeJS Application on Kubernetes
+
+================================================================================
+SECTION 1: ASSIGNMENT REQUIREMENTS OVERVIEW
+================================================================================
+
+Problem Statement:
+- Deploy a multi-tier NodeJS application on Kubernetes cluster
+- Application: devopsedu/employee (available on Docker Hub)
+- Database: mongo (available on Docker Hub)
+- NodeJS app runs on port 8888 in container
+- MongoDB accepts connections on port 27017
+- MongoDB service and deployment must be named "mongo"
+- Deploy using CLI commands
+- Verify by adding and retrieving employee data
+
+================================================================================
+SECTION 2: ENVIRONMENT SETUP
+================================================================================
+
+Local Environment:
+- Operating System: macOS
+- Container Runtime: Podman (version 5.7.0)
+- Kubernetes: kind (Kubernetes in Docker) v0.30.0
+- Docker and docker-compose are aliased to podman and podman-compose
+
+Commands to verify environment:
+$ podman --version
+$ kind version
+$ kubectl version --client
+
+================================================================================
+SECTION 3: CLUSTER CREATION
+================================================================================
+
+Step 1: Check for existing clusters
+$ KIND_EXPERIMENTAL_PROVIDER=podman kind get clusters
+
+Step 2: Create new kind cluster
+$ KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster --name k8s-assignment
+
+Expected Output:
+✓ Ensuring node image
+✓ Preparing nodes
+✓ Writing configuration
+✓ Starting control-plane
+✓ Installing CNI
+✓ Installing StorageClass
+
+Step 3: Verify cluster is running
+$ kubectl cluster-info --context kind-k8s-assignment
+
+Expected Output:
+Kubernetes control plane is running at https://127.0.0.1:[PORT]
+CoreDNS is running...
+
+Step 4: Check cluster nodes
+$ kubectl get nodes
+
+Expected Output:
+NAME                         STATUS   ROLES           AGE   VERSION
+k8s-assignment-control-plane Ready    control-plane   Xm    v1.34.0
+
+================================================================================
+SECTION 4: KUBERNETES MANIFESTS
+================================================================================
+
+All manifests are located in:
+/Users/C177341/Local_Mac/Edureka_DevOps_Arch_Training/8_case_study/k8s-manifests/
+
+Files Created:
+1. mongo-deployment.yaml    - MongoDB deployment configuration
+2. mongo-service.yaml       - MongoDB service (ClusterIP)
+3. employee-deployment.yaml - Employee app deployment configuration
+4. employee-service.yaml    - Employee app service (NodePort)
+
+You can show these files to instructor:
+$ cd /Users/C177341/Local_Mac/Edureka_DevOps_Arch_Training/8_case_study/k8s-manifests
+$ ls -la
+
+================================================================================
+SECTION 5: MONGODB DEPLOYMENT
+================================================================================
+
+Step 1: Show MongoDB deployment manifest
+$ cat mongo-deployment.yaml
+
+Key Points to Highlight:
+- Deployment name: "mongo" (as required)
+- Image: mongo:5.0
+- Container port: 27017
+- Environment variable for database initialization
+
+Step 2: Deploy MongoDB
+$ kubectl apply -f mongo-deployment.yaml
+
+Expected Output:
+deployment.apps/mongo created
+
+Step 3: Show MongoDB service manifest
+$ cat mongo-service.yaml
+
+Key Points to Highlight:
+- Service name: "mongo" (as required)
+- Type: ClusterIP (internal access only)
+- Port: 27017
+- Selector matches MongoDB deployment
+
+Step 4: Deploy MongoDB service
+$ kubectl apply -f mongo-service.yaml
+
+Expected Output:
+service/mongo created
+
+Step 5: Verify MongoDB deployment
+$ kubectl get deployment mongo
+$ kubectl get pods -l app=mongo
+
+Expected Output:
+NAME                     READY   STATUS    RESTARTS   AGE
+mongo-xxxxxxxxxx-xxxxx   1/1     Running   0          Xm
+
+Step 6: Verify MongoDB service
+$ kubectl get service mongo
+
+Expected Output:
+NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE
+mongo   ClusterIP   10.96.X.X       <none>        27017/TCP   Xm
+
+================================================================================
+SECTION 6: EMPLOYEE APPLICATION DEPLOYMENT
+================================================================================
+
+Step 1: Show Employee app deployment manifest
+$ cat employee-deployment.yaml
+
+Key Points to Highlight:
+- Image: devopsedu/employee:latest
+- Container port: 8888
+- Environment variables connecting to mongo service:
+  * MONGO_HOST: mongo
+  * MONGO_PORT: 27017
+
+Step 2: Deploy Employee application
+$ kubectl apply -f employee-deployment.yaml
+
+Expected Output:
+deployment.apps/employee-app created
+
+Step 3: Show Employee app service manifest
+$ cat employee-service.yaml
+
+Key Points to Highlight:
+- Type: NodePort (external access)
+- Port: 8888
+- NodePort: 30888
+- Selector matches employee-app deployment
+
+Step 4: Deploy Employee app service
+$ kubectl apply -f employee-service.yaml
+
+Expected Output:
+service/employee-app created
+
+Step 5: Verify Employee app deployment
+$ kubectl get deployment employee-app
+$ kubectl get pods -l app=employee-app
+
+Expected Output:
+NAME                            READY   STATUS    RESTARTS   AGE
+employee-app-xxxxxxxxxx-xxxxx   1/1     Running   0          Xm
+
+Step 6: Verify Employee app service
+$ kubectl get service employee-app
+
+Expected Output:
+NAME           TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)          AGE
+employee-app   NodePort   10.96.X.X     <none>        8888:30888/TCP   Xm
+
+================================================================================
+SECTION 7: VERIFY ALL RESOURCES
+================================================================================
+
+Step 1: Show all deployments
+$ kubectl get deployments
+
+Expected Output:
+NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+employee-app   1/1     1            1           Xm
+mongo          1/1     1            1           Xm
+
+Step 2: Show all pods
+$ kubectl get pods
+
+Expected Output:
+NAME                            READY   STATUS    RESTARTS   AGE
+employee-app-xxxxxxxxxx-xxxxx   1/1     Running   0          Xm
+mongo-xxxxxxxxxx-xxxxx          1/1     Running   0          Xm
+
+Step 3: Show all services
+$ kubectl get services
+
+Expected Output:
+NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+employee-app   NodePort    10.96.X.X       <none>        8888:30888/TCP   Xm
+kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP          Xm
+mongo          ClusterIP   10.96.X.X       <none>        27017/TCP        Xm
+
+Step 4: Show detailed pod information
+$ kubectl describe pod -l app=employee-app
+
+Key Points to Show:
+- Container image pulled successfully
+- Environment variables set correctly
+- Pod is running
+
+Step 5: Check pod logs
+$ kubectl logs -l app=employee-app
+
+This shows the NodeJS application started successfully
+
+================================================================================
+SECTION 8: ACCESS THE APPLICATION
+================================================================================
+
+Since we're using kind with podman, we need port-forwarding:
+
+Step 1: Set up port forwarding
+$ kubectl port-forward service/employee-app 8888:8888
+
+Expected Output:
+Forwarding from 127.0.0.1:8888 -> 8888
+Forwarding from [::1]:8888 -> 8888
+
+NOTE: This command runs in foreground. Open a new terminal for next steps.
+
+Step 2: Open browser and navigate to:
+http://localhost:8888
+
+The Employee Management application should load
+
+================================================================================
+SECTION 9: FUNCTIONAL TESTING
+================================================================================
+
+Step 1: Navigate to "Add Employee" page
+Click on the "Add Employee" link or button
+
+Step 2: Fill in employee details (example):
+- Employee Name: John Doe
+- Employee ID: EMP001
+- Department: Engineering
+- Salary: 75000
+(Fill in whatever fields the form requires)
+
+Step 3: Submit the form
+Click "Submit" or "Add Employee" button
+
+Expected Result:
+- Success message appears
+- Employee is added to MongoDB database
+
+Step 4: Navigate to "Get Employee" page
+Click on "Get Employee" or "View Employees" link
+
+Step 5: Verify the employee data
+Expected Result:
+- The employee you just added should appear in the list
+- All details should match what you entered
+- This confirms:
+  ✓ NodeJS app is running on port 8888
+  ✓ MongoDB is accepting connections on port 27017
+  ✓ Application can write to database
+  ✓ Application can read from database
+  ✓ All connections are working properly
+
+================================================================================
+SECTION 10: ADDITIONAL VERIFICATION COMMANDS
+================================================================================
+
+Check if employee app can reach MongoDB:
+$ kubectl exec -it deployment/employee-app -- sh
+# Inside the pod:
+$ ping mongo
+$ exit
+
+View MongoDB logs:
+$ kubectl logs -l app=mongo
+
+View Employee app logs:
+$ kubectl logs -l app=employee-app
+
+Check pod resource usage:
+$ kubectl top pods
+(Note: Requires metrics-server to be installed)
+
+Describe the MongoDB service:
+$ kubectl describe service mongo
+
+Describe the Employee app service:
+$ kubectl describe service employee-app
+
+================================================================================
+SECTION 11: TROUBLESHOOTING NOTES
+================================================================================
+
+Issue Encountered During Setup:
+- Image pull error with mongo:latest due to TLS certificate issues
+- This is a known issue with kind + podman combination
+
+Solution Applied:
+1. Pulled mongo image manually with podman:
+   $ podman pull --tls-verify=false docker.io/library/mongo:5.0
+
+2. Saved image to tar file:
+   $ podman save -o /tmp/mongo-5.0.tar docker.io/library/mongo:5.0
+
+3. Loaded into kind cluster:
+   $ KIND_EXPERIMENTAL_PROVIDER=podman kind load image-archive /tmp/mongo-5.0.tar --name k8s-assignment
+
+4. Updated deployment to use mongo:5.0 and imagePullPolicy: IfNotPresent
+
+================================================================================
+SECTION 12: ARCHITECTURE OVERVIEW
+================================================================================
+
+Application Architecture:
+
+┌─────────────────────────────────────────────────────────────┐
+│                     Kubernetes Cluster                       │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │                                                          │ │
+│  │  ┌──────────────────┐         ┌──────────────────┐    │ │
+│  │  │  employee-app    │         │     mongo        │    │ │
+│  │  │  Deployment      │────────▶│  Deployment      │    │ │
+│  │  │  (NodeJS App)    │         │  (MongoDB)       │    │ │
+│  │  │  Port: 8888      │         │  Port: 27017     │    │ │
+│  │  └──────────────────┘         └──────────────────┘    │ │
+│  │         │                              │                │ │
+│  │         │                              │                │ │
+│  │  ┌──────────────────┐         ┌──────────────────┐    │ │
+│  │  │  employee-app    │         │     mongo        │    │ │
+│  │  │  Service         │         │   Service        │    │ │
+│  │  │  (NodePort)      │         │  (ClusterIP)     │    │ │
+│  │  │  30888:8888      │         │  27017           │    │ │
+│  │  └──────────────────┘         └──────────────────┘    │ │
+│  │         │                                               │ │
+│  └─────────┼───────────────────────────────────────────────┘ │
+│            │                                                  │
+└────────────┼──────────────────────────────────────────────────┘
+             │
+             ▼
+    Port Forward: localhost:8888
+             │
+             ▼
+    Browser: http://localhost:8888
+
+================================================================================
+SECTION 13: CLEANUP (AFTER DEMONSTRATION)
+================================================================================
+
+To stop port forwarding:
+Press Ctrl+C in the terminal running port-forward
+
+To delete all resources:
+$ kubectl delete -f k8s-manifests/
+
+To delete the cluster:
+$ KIND_EXPERIMENTAL_PROVIDER=podman kind delete cluster --name k8s-assignment
+
+To verify cluster is deleted:
+$ KIND_EXPERIMENTAL_PROVIDER=podman kind get clusters
+
+================================================================================
+SECTION 14: KEY POINTS TO EMPHASIZE
+================================================================================
+
+✓ Assignment Requirements Met:
+  1. Deployed NodeJS application (devopsedu/employee) ✓
+  2. Deployed MongoDB database ✓
+  3. NodeJS app accessible on port 8888 ✓
+  4. MongoDB accepting connections on port 27017 ✓
+  5. MongoDB service and deployment named "mongo" ✓
+  6. All deployments done using kubectl CLI ✓
+  7. Application tested - can add employee ✓
+  8. Application tested - can retrieve employee ✓
+
+✓ Best Practices Followed:
+  1. Separate manifests for each resource
+  2. Proper labels and selectors
+  3. Environment variables for configuration
+  4. ClusterIP for internal services (MongoDB)
+  5. NodePort for external access (Employee app)
+  6. Meaningful resource names
+
+✓ Skills Demonstrated:
+  1. Kubernetes cluster creation with kind
+  2. Writing Kubernetes manifests (Deployments & Services)
+  3. Using kubectl CLI for deployment
+  4. Pod and service verification
+  5. Port forwarding for local access
+  6. Troubleshooting image pull issues
+  7. Application testing and validation
+
+================================================================================
+END OF DEMONSTRATION GUIDE
+================================================================================
+
+Quick Command Reference:
+
+View all resources:
+$ kubectl get all
+
+View logs:
+$ kubectl logs -l app=employee-app
+$ kubectl logs -l app=mongo
+
+Restart deployment:
+$ kubectl rollout restart deployment/employee-app
+$ kubectl rollout restart deployment/mongo
+
+Get pod shell access:
+$ kubectl exec -it deployment/employee-app -- sh
+$ kubectl exec -it deployment/mongo -- bash
+
+Port forward command:
+$ kubectl port-forward service/employee-app 8888:8888
+
+================================================================================

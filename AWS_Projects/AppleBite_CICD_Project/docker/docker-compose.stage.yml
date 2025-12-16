@@ -1,0 +1,55 @@
+# Docker Compose for Stage Environment
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    container_name: applebite-stage-web
+    ports:
+      - "8081:80"
+    volumes:
+      - ./logs:/var/log/apache2
+    environment:
+      - ENVIRONMENT=stage
+      - PHP_DISPLAY_ERRORS=Off
+      - PHP_ERROR_REPORTING=E_ALL & ~E_DEPRECATED & ~E_STRICT
+    networks:
+      - applebite-stage-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: mysql:8.0
+    container_name: applebite-stage-db
+    environment:
+      MYSQL_ROOT_PASSWORD: stage_root_password
+      MYSQL_DATABASE: applebite_stage
+      MYSQL_USER: applebite_user
+      MYSQL_PASSWORD: stage_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - stage-db-data:/var/lib/mysql
+    networks:
+      - applebite-stage-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  applebite-stage-network:
+    driver: bridge
+
+volumes:
+  stage-db-data:

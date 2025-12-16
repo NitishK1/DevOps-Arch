@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    image: company-website:latest
+    container_name: company-website
+    ports:
+      - "80:80"
+    volumes:
+      # Mount the website files to ensure data persistence
+      - ./dockerContent/Case-study app:/var/www/html
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge

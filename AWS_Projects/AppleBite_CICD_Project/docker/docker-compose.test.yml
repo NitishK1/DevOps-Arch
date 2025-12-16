@@ -1,0 +1,57 @@
+# Docker Compose for Test Environment
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: development
+    container_name: applebite-test-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ../app/website:/var/www/html
+      - ./logs:/var/log/apache2
+    environment:
+      - ENVIRONMENT=test
+      - PHP_DISPLAY_ERRORS=On
+      - PHP_ERROR_REPORTING=E_ALL
+    networks:
+      - applebite-test-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional MySQL database for testing
+  db:
+    image: mysql:8.0
+    container_name: applebite-test-db
+    environment:
+      MYSQL_ROOT_PASSWORD: test_root_password
+      MYSQL_DATABASE: applebite_test
+      MYSQL_USER: applebite_user
+      MYSQL_PASSWORD: test_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - test-db-data:/var/lib/mysql
+    networks:
+      - applebite-test-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  applebite-test-network:
+    driver: bridge
+
+volumes:
+  test-db-data:

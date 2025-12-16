@@ -1,0 +1,11 @@
+# Ansible Inventory for AppleBite CI/CD Project
+# Auto-generated on Sat, Dec 13, 2025  1:21:13 AM
+
+[test_server]
+testserver ansible_host=Thereisnodistributionwiththesuppliedname.Errorcode:Wsl/Service/WSL_E_DISTRO_NOT_FOUND ansible_user=Thereisnodistributionwiththesuppliedname.Errorcode:Wsl/Service/WSL_E_DISTRO_NOT_FOUND ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[prod_server]
+prodserver ansible_host=192.168.128.187 ansible_user=Thereisnodistributionwiththesuppliedname.Errorcode:Wsl/Service/WSL_E_DISTRO_NOT_FOUND ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

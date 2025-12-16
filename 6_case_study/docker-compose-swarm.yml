@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  web:
+    image: ${DOCKERHUB_USERNAME}/company-website:latest
+    ports:
+      - "80:80"
+    volumes:
+      # Using a named volume for swarm
+      # - website-data:/var/www/html
+      - ./dockerContent/Case-study app:/var/www/html
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - webnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  webnet:
+    driver: overlay
+# volumes:
+#   website-data:
+#     driver: local

@@ -1,0 +1,39 @@
+# .gitignore for AppleBite CI/CD Project
+
+# Jenkins
+jenkins_home/
+.jenkins/
+
+# Ansible
+*.retry
+ansible.log
+
+# SSH Keys
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Environment files
+.env
+*.env
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+temp/
+tmp/

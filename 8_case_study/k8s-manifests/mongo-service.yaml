@@ -1,0 +1,14 @@
+apiVersion: v1 # Kubernetes API version for Service resources
+kind: Service # Type of Kubernetes resource to create
+metadata: # Metadata provides identifying information about the resource
+  name: mongo # Name of the service (used for DNS resolution within cluster)
+  labels: # Labels for organizing and selecting this service
+    app: mongo
+spec: # Spec defines the desired state of the service
+  type: ClusterIP # Service type (ClusterIP = internal only, accessible within cluster)
+  ports: # Ports that this service exposes
+    - port: 27017 # Port that the service listens on (other pods connect to this)
+      targetPort: 27017 # Port on the target pod to forward traffic to
+      protocol: TCP # Network protocol (TCP or UDP)
+  selector: # Selector determines which pods receive traffic from this service
+    app: mongo # Route traffic to pods with this label
