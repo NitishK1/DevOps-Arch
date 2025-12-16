@@ -16,8 +16,8 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files to the container
-COPY app/ /var/www/html/
+# Copy application files to the container (from submodule's website folder)
+COPY app/website/ /var/www/html/
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html && \

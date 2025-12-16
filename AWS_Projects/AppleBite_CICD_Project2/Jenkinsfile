@@ -66,6 +66,11 @@ EOF
                         echo "Pulling latest code from Git..."
                         checkout scm
 
+                        // Initialize and update submodules
+                        sh '''
+                            git submodule update --init --recursive
+                        '''
+
                         // Build Docker image on test server
                         sh '''
                             # Copy files to test server

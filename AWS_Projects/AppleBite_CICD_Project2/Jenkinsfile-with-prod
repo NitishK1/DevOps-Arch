@@ -84,6 +84,11 @@ pipeline {
                         echo "Pulling latest code from Git..."
                         checkout scm
 
+                        // Initialize and update submodules
+                        sh '''
+                            git submodule update --init --recursive
+                        '''
+
                         // Build Docker image locally
                         sh '''
                             cd AWS_Projects/AppleBite_CICD_Project2
