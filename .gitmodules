@@ -1,9 +1,3 @@
-[submodule "6_case_study/dockerContent"]
-	path = 6_case_study/dockerContent
-	url = https://github.com/edurekacontent/dockerContent
-[submodule "AWS_Projects/AppleBite_CICD_Project/app"]
-	path = AWS_Projects/AppleBite_CICD_Project/app
-	url = https://github.com/edureka-devops/projCert.git
 [submodule "AWS_Projects/AppleBite_CICD_Project2/app"]
 	path = AWS_Projects/AppleBite_CICD_Project2/app
 	url = https://github.com/edureka-devops/projCert.git
