@@ -2,10 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKERHUB_USERNAME = "${env.DOCKERHUB_CREDENTIALS_USR}"
         IMAGE_NAME = "abstergo-website"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        WORKSPACE_PATH = "AWS_Projects/Project2"
     }
 
     stages {
@@ -13,42 +12,84 @@ pipeline {
             steps {
                 echo 'Checking out code from GitHub...'
                 checkout scm
-                sh 'git submodule update --init --recursive'
+                script {
+                    if (isUnix()) {
+                        sh 'git submodule update --init --recursive'
+                    } else {
+                        bat 'git submodule update --init --recursive'
+                    }
+                }
             }
         }
 
-        stage('Build') {
+        stage('Verify Files') {
             steps {
-                echo 'Building application...'
-                sh 'ls -la app/website/'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Running basic tests...'
-                sh 'test -f app/website/index.php && echo "Application files present"'
+                echo 'Verifying application files...'
+                script {
+                    dir("${WORKSPACE_PATH}") {
+                        if (isUnix()) {
+                            sh 'ls -la app/website/ || echo "Files not found"'
+                            sh 'test -f app/website/index.php && echo "✓ Application files present" || exit 1'
+                        } else {
+                            bat 'dir app\\website\\'
+                            bat 'if exist app\\website\\index.php (echo Application files present) else (exit 1)'
+                        }
+                    }
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                sh """
-                    docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} .
-                    docker tag ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest
-                """
+                script {
+                    dir("${WORKSPACE_PATH}") {
+                        // Get Docker Hub credentials if available
+                        def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
+
+                        if (isUnix()) {
+                            sh """
+                                docker build -t ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} .
+                                docker tag ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} ${dockerhubUsername}/${IMAGE_NAME}:latest
+                            """
+                        } else {
+                            bat """
+                                docker build -t ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} .
+                                docker tag ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} ${dockerhubUsername}/${IMAGE_NAME}:latest
+                            """
+                        }
+                    }
+                }
             }
         }
 
         stage('Push to Docker Hub') {
+            when {
+                expression {
+                    return env.DOCKERHUB_USERNAME != null && env.DOCKERHUB_USERNAME != 'local'
+                }
+            }
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
-                sh """
-                    echo \${DOCKERHUB_CREDENTIALS_PSW} | docker login -u \${DOCKERHUB_CREDENTIALS_USR} --password-stdin
-                    docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest
-                """
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                                     usernameVariable: 'DOCKER_USER',
+                                                     passwordVariable: 'DOCKER_PASS')]) {
+                        if (isUnix()) {
+                            sh """
+                                echo \${DOCKER_PASS} | docker login -u \${DOCKER_USER} --password-stdin
+                                docker push \${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                                docker push \${DOCKER_USER}/${IMAGE_NAME}:latest
+                            """
+                        } else {
+                            bat """
+                                echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                                docker push %DOCKER_USER%/${IMAGE_NAME}:${IMAGE_TAG}
+                                docker push %DOCKER_USER%/${IMAGE_NAME}:latest
+                            """
+                        }
+                    }
+                }
             }
         }
 
@@ -56,13 +97,27 @@ pipeline {
             steps {
                 echo 'Deploying to Kubernetes cluster...'
                 script {
-                    sh """
-                        # Update deployment image
-                        kubectl set image deployment/abstergo-website-deployment abstergo-website=${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} --record
+                    dir("${WORKSPACE_PATH}") {
+                        def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
 
-                        # Wait for rollout to complete
-                        kubectl rollout status deployment/abstergo-website-deployment
-                    """
+                        if (isUnix()) {
+                            sh """
+                                kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} --record=true || echo "Deployment not found, applying manifests..."
+                                kubectl apply -f k8s/deployment.yaml
+                                kubectl apply -f k8s/service.yaml
+                                kubectl apply -f k8s/hpa.yaml
+                                kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
+                            """
+                        } else {
+                            bat """
+                                kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} --record=true || echo Deployment not found, applying manifests...
+                                kubectl apply -f k8s/deployment.yaml
+                                kubectl apply -f k8s/service.yaml
+                                kubectl apply -f k8s/hpa.yaml
+                                kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
+                            """
+                        }
+                    }
                 }
             }
         }
@@ -70,18 +125,33 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 echo 'Verifying deployment...'
-                sh """
-                    kubectl get pods -l app=abstergo-website
-                    kubectl get svc abstergo-website-service
-                """
+                script {
+                    if (isUnix()) {
+                        sh """
+                            kubectl get pods -l app=abstergo-website
+                            kubectl get svc abstergo-website-service
+                        """
+                    } else {
+                        bat """
+                            kubectl get pods -l app=abstergo-website
+                            kubectl get svc abstergo-website-service
+                        """
+                    }
+                }
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up...'
-            sh 'docker logout'
+            script {
+                echo 'Cleaning up...'
+                try {
+                    sh 'docker logout'
+                } catch (Exception e) {
+                    echo "Docker logout failed: ${e.message}"
+                }
+            }
         }
         success {
             echo 'Pipeline completed successfully!'
