@@ -2,7 +2,8 @@
 
 ## Issue: Kubernetes Authentication Failed
 
-The pipeline is failing because Jenkins cannot access your Kubernetes cluster. Here's how to fix it:
+The pipeline is failing because Jenkins cannot access your Kubernetes cluster.
+Here's how to fix it:
 
 ## Solution Options
 
@@ -12,7 +13,7 @@ The pipeline is failing because Jenkins cannot access your Kubernetes cluster. H
    ```cmd
    # If running as Windows service
    net stop jenkins
-   
+
    # If running in Docker
    docker stop jenkins
    ```
@@ -21,7 +22,7 @@ The pipeline is failing because Jenkins cannot access your Kubernetes cluster. H
    ```cmd
    # Create Jenkins .kube directory
    mkdir C:\ProgramData\Jenkins\.jenkins\.kube
-   
+
    # Copy your kubeconfig
    copy %USERPROFILE%\.kube\config C:\ProgramData\Jenkins\.jenkins\.kube\config
    ```
@@ -30,7 +31,7 @@ The pipeline is failing because Jenkins cannot access your Kubernetes cluster. H
    ```cmd
    # If running as Windows service
    net start jenkins
-   
+
    # If running in Docker
    docker start jenkins
    ```
@@ -78,7 +79,7 @@ stage('Deploy to Kubernetes') {
         script {
             dir("${WORKSPACE_PATH}") {
                 def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
-                
+
                 // Use kubeconfig credential
                 withKubeConfig([credentialsId: 'kubeconfig-credentials']) {
                     if (isUnix()) {
@@ -136,12 +137,12 @@ After configuration, test kubectl access:
 ## Common Issues and Solutions
 
 ### Issue: "Authentication required"
-**Cause**: Jenkins doesn't have kubectl configured  
-**Solution**: Use Option 1 or Option 2 above
+**Cause**: Jenkins doesn't have kubectl configured **Solution**: Use Option 1 or
+Option 2 above
 
 ### Issue: "kubectl: command not found"
-**Cause**: kubectl not installed on Jenkins server  
-**Solution**: Install kubectl on Windows:
+**Cause**: kubectl not installed on Jenkins server **Solution**: Install kubectl
+on Windows:
 ```cmd
 # Using Chocolatey
 choco install kubernetes-cli
@@ -150,12 +151,12 @@ choco install kubernetes-cli
 ```
 
 ### Issue: "The system cannot find the file specified"
-**Cause**: Using `sh` command on Windows Jenkins  
-**Solution**: Already fixed in updated Jenkinsfile (uses `bat` for Windows)
+**Cause**: Using `sh` command on Windows Jenkins **Solution**: Already fixed in
+updated Jenkinsfile (uses `bat` for Windows)
 
 ### Issue: "Error from server (Forbidden)"
-**Cause**: kubeconfig pointing to wrong cluster or expired credentials  
-**Solution**: 
+**Cause**: kubeconfig pointing to wrong cluster or expired credentials
+**Solution**:
 ```cmd
 # Verify your kubectl works locally
 kubectl cluster-info
@@ -172,13 +173,13 @@ To test the pipeline without Kubernetes deployment:
    ```groovy
    pipeline {
        agent any
-       
+
        environment {
            IMAGE_NAME = "abstergo-website"
            IMAGE_TAG = "${env.BUILD_NUMBER}"
            WORKSPACE_PATH = "AWS_Projects/Project2"
        }
-       
+
        stages {
            stage('Checkout') {
                steps {
@@ -192,7 +193,7 @@ To test the pipeline without Kubernetes deployment:
                    }
                }
            }
-           
+
            stage('Build Docker Image') {
                steps {
                    script {
@@ -206,7 +207,7 @@ To test the pipeline without Kubernetes deployment:
                    }
                }
            }
-           
+
            stage('Test Docker Image') {
                steps {
                    script {

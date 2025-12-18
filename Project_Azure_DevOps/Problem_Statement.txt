@@ -1,0 +1,62 @@
+Project: Streamline the Software Development Lifecycle for ”TechCo” using Azure
+DevOps
+Background:
+"TechCo"; is a leading technology company specializing in software solutions.
+They have a team of software engineers working on various projects
+simultaneously. However, the current development process lacks organization
+and collaboration, leading to delays and inefficiencies. To address these issues,
+"TechCo"; has decided to adopt Azure DevOps and wants the software
+engineering team to utilize its capabilities effectively.
+Problem Statement:
+As a software engineer at "TechCo," your task is to leverage Azure DevOps to
+streamline the Software Development Lifecycle (SDLC) for a new project called
+"ProjectX." This project aims to develop a web application for managing
+customer orders.
+Requirements:
+1. Creation of Boards:
+a. Create an "Epic" in Azure DevOps for "ProjectX." The Epic should represent
+the overall goal of the project.
+b. Break down the Epic into user-centric "User Stories" with clear acceptance
+criteria. Each User Story should represent a specific functionality of the web
+application.
+c. Create tasks within each User Story to define the specific work items
+required for implementation.
+2. Utilize Repos:
+a. Create a new Git repository in Azure DevOps to host the source code for
+"ProjectX."
+b. Initialize the repository with a basic project structure that includes
+necessary files and folders for the web application.
+c. Collaboratively work on the source code using branches and pull requests.
+Ensure that each feature or bug fix is developed on a separate branch and
+merged back to the main branch after review.
+3. Build CICD Pipelines:
+a. Configure a Continuous Integration (CI) pipeline to automatically build the
+web application whenever changes are pushed to the main branch of the
+repository.
+b. Set up automated testing as part of the CI pipeline to ensure the code
+quality.
+c. Implement a Continuous Deployment (CD) pipeline to automatically deploy
+the web application to a staging environment whenever changes are
+successfully built and pass the tests.
+d. Enable manual approval gates before deploying the web application to the
+production environment.
+Deliverables:
+1. Create and organize Epics, User Stories, and Tasks on Azure DevOps Boards
+for "ProjectX."
+2. Develop the source code for "ProjectX" on Azure DevOps Repos, utilizing
+branches and pull requests for collaboration.
+3. Configure a CI pipeline to build the web application, including automated
+testing.
+4. Implement a CD pipeline to deploy the web application to staging and
+production environments, with manual approval gates.
+Evaluation Criteria:
+1. Proper organization of Epics, User Stories, and Tasks on Azure DevOps
+Boards.
+2. Effective utilization of Azure DevOps Repos for source code management
+and collaboration.
+3. Successful configuration of CI pipeline for building the web application.
+4. Successful implementation of the CD pipeline with staging and production
+deployments.s
+Note: You are encouraged to explore and utilize other Azure DevOps features
+that can enhance the SDLC workflow, such as Azure Repos Wiki for
+documentation or Azure Artifacts for package management.

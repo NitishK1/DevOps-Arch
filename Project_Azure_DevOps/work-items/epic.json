@@ -1,0 +1,28 @@
+{
+  "epic": {
+    "title": "ProjectX - Order Management System",
+    "description": "Develop a comprehensive web application for managing customer orders. This system will enable customers to place orders, track their status, and manage their account, while providing administrators with tools to process orders, manage inventory, and generate reports. The system will be built using modern web technologies with a focus on scalability, security, and user experience.",
+    "state": "New",
+    "priority": 1,
+    "valueArea": "Business",
+    "startDate": "2025-01-01",
+    "targetDate": "2025-03-31",
+    "businessValue": 1000,
+    "timeCriticality": 0.8,
+    "tags": ["web-app", "order-management", "e-commerce", "projectx"],
+    "customFields": {
+      "stakeholders": [
+        "Product Owner",
+        "Business Analyst",
+        "Development Team",
+        "QA Team"
+      ],
+      "businessGoals": [
+        "Streamline order processing workflow",
+        "Improve customer satisfaction",
+        "Reduce order processing time by 50%",
+        "Enable real-time order tracking"
+      ]
+    }
+  }
+}

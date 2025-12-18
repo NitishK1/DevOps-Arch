@@ -1,0 +1,132 @@
+#!/bin/bash
+
+################################################################################
+# Setup Git Repository in Azure Repos
+################################################################################
+
+set -e
+source "$(dirname "$0")/../config/credentials.sh"
+
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+echo -e "${BLUE}Setting up Git repository...${NC}"
+
+# Set defaults
+az devops configure --defaults organization="https://dev.azure.com/$AZURE_DEVOPS_ORG" project="$AZURE_DEVOPS_PROJECT"
+
+# Check if repo exists
+REPO_EXISTS=$(az repos list --query "[?name=='$REPO_NAME'].name" -o tsv)
+
+if [ -z "$REPO_EXISTS" ]; then
+    echo "Creating repository: $REPO_NAME"
+    az repos create --name "$REPO_NAME" >/dev/null
+    sleep 5
+else
+    echo "Repository already exists: $REPO_NAME"
+fi
+
+# Get repository URL
+REPO_URL=$(az repos show --repository "$REPO_NAME" --query "remoteUrl" -o tsv)
+echo "Repository URL: $REPO_URL"
+
+# Initialize local git if not already initialized
+cd "$PROJECT_ROOT"
+if [ ! -d ".git" ]; then
+    echo "Initializing local git repository..."
+    git init
+    git checkout -b main 2>/dev/null || git checkout main
+fi
+
+# Create .gitignore
+cat > .gitignore <<EOF
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Environment variables
+.env
+config/credentials.sh
+
+# Build outputs
+dist/
+build/
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+
+# Azure
+.azure/
+EOF
+
+# Add all files
+echo "Adding files to git..."
+git add .
+
+# Commit
+if git diff-index --quiet HEAD -- 2>/dev/null; then
+    echo "No changes to commit"
+else
+    git commit -m "Initial commit - ProjectX Order Management System
+
+- Added application code with Node.js/Express server
+- Created CI/CD pipeline configuration
+- Added work item templates for Azure Boards
+- Included automation scripts for setup
+- Added comprehensive documentation
+
+This commit sets up the complete ProjectX infrastructure as code."
+fi
+
+# Add Azure DevOps remote
+if ! git remote | grep -q "azure"; then
+    echo "Adding Azure DevOps remote..."
+    git remote add azure "$REPO_URL"
+fi
+
+# Push to Azure Repos
+echo "Pushing to Azure Repos..."
+echo -e "${YELLOW}Note: You may be prompted for credentials${NC}"
+git push azure main -u 2>/dev/null || {
+    echo ""
+    echo -e "${YELLOW}If push failed due to authentication:${NC}"
+    echo "1. Generate a PAT at: https://dev.azure.com/$AZURE_DEVOPS_ORG/_usersSettings/tokens"
+    echo "2. Use the PAT as password when prompted"
+    echo "3. Or configure git credential helper"
+}
+
+# Set branch policies (optional - requires API)
+echo ""
+echo -e "${BLUE}Setting up branch policies...${NC}"
+echo "(Branch policies are best configured via Azure DevOps web UI)"
+echo "Recommended policies for 'main' branch:"
+echo "  - Require pull request reviews"
+echo "  - Require successful build"
+echo "  - Require linked work items"
+
+echo ""
+echo -e "${GREEN}✓ Repository setup complete${NC}"
+echo ""
+echo "Repository URL: $REPO_URL"
+echo "Local branch: main"
+echo "Remote: azure"

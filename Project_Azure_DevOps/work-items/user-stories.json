@@ -1,0 +1,109 @@
+{
+  "userStories": [
+    {
+      "id": "US1",
+      "title": "User Authentication and Authorization",
+      "description": "As a user, I want to securely log in to the system so that I can access my orders and account information",
+      "acceptanceCriteria": [
+        "Users can register with email and password",
+        "Users can log in with valid credentials",
+        "Password reset functionality is available via email",
+        "Role-based access control distinguishes between customers and administrators",
+        "Session management is secure with appropriate timeout",
+        "Failed login attempts are tracked and limited",
+        "Passwords are hashed and stored securely"
+      ],
+      "priority": 1,
+      "storyPoints": 8,
+      "state": "New",
+      "assignedTo": "",
+      "tags": ["authentication", "security", "backend"],
+      "parentEpic": "ProjectX - Order Management System"
+    },
+    {
+      "id": "US2",
+      "title": "Create and Submit Orders",
+      "description": "As a customer, I want to create and submit orders for products so that I can purchase items",
+      "acceptanceCriteria": [
+        "Users can browse available products with images and descriptions",
+        "Users can add products to shopping cart",
+        "Users can specify quantity and product variants/options",
+        "Shopping cart persists across sessions",
+        "Order summary displays all items, quantities, and total price",
+        "Users can apply discount codes",
+        "Confirmation email is sent after successful order submission",
+        "Order is saved to database with unique order ID"
+      ],
+      "priority": 2,
+      "storyPoints": 13,
+      "state": "New",
+      "assignedTo": "",
+      "tags": ["orders", "shopping-cart", "frontend", "backend"],
+      "parentEpic": "ProjectX - Order Management System"
+    },
+    {
+      "id": "US3",
+      "title": "View and Track Orders",
+      "description": "As a customer, I want to view my order history and track current orders so that I know the status of my purchases",
+      "acceptanceCriteria": [
+        "Users can view a list of all their orders sorted by date",
+        "Order details page shows all items, quantities, prices, and status",
+        "Real-time order status is displayed (Pending, Processing, Shipped, Delivered, Cancelled)",
+        "Tracking information is available for shipped orders",
+        "Users can filter orders by status and date range",
+        "Users can search orders by order ID or product name",
+        "Email notifications are sent when order status changes",
+        "Order timeline shows status change history"
+      ],
+      "priority": 2,
+      "storyPoints": 8,
+      "state": "New",
+      "assignedTo": "",
+      "tags": ["orders", "tracking", "frontend", "notifications"],
+      "parentEpic": "ProjectX - Order Management System"
+    },
+    {
+      "id": "US4",
+      "title": "Order Management for Administrators",
+      "description": "As an administrator, I want to manage all orders in the system so that I can fulfill customer requests efficiently",
+      "acceptanceCriteria": [
+        "Admins can view all orders in the system with pagination",
+        "Admins can search and filter orders by multiple criteria",
+        "Admins can update order status with reason/notes",
+        "Admins can cancel orders with refund processing",
+        "Admins can generate order reports (daily, weekly, monthly)",
+        "Admins receive real-time notifications for new orders",
+        "Admins can export order data to CSV/Excel",
+        "Dashboard shows key metrics (total orders, pending, revenue)"
+      ],
+      "priority": 3,
+      "storyPoints": 13,
+      "state": "New",
+      "assignedTo": "",
+      "tags": ["admin", "orders", "reporting", "dashboard"],
+      "parentEpic": "ProjectX - Order Management System"
+    },
+    {
+      "id": "US5",
+      "title": "Product Catalog Management",
+      "description": "As an administrator, I want to manage the product catalog so that customers can order the correct and available items",
+      "acceptanceCriteria": [
+        "Admins can add new products with details (name, description, price, SKU)",
+        "Admins can upload multiple product images",
+        "Admins can update product details and pricing",
+        "Admins can set product availability (in stock, out of stock)",
+        "Products can be organized into categories and subcategories",
+        "Admins can set product variants (size, color, etc.)",
+        "Admins can manage inventory quantities",
+        "Products can be marked as featured or on sale",
+        "Search engine friendly URLs are generated for products"
+      ],
+      "priority": 3,
+      "storyPoints": 8,
+      "state": "New",
+      "assignedTo": "",
+      "tags": ["admin", "products", "catalog", "inventory"],
+      "parentEpic": "ProjectX - Order Management System"
+    }
+  ]
+}

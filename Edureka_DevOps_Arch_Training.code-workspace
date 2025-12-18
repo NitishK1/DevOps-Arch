@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../DevOps-Arch-Projects"
 		}
 	],
 	"settings": {}

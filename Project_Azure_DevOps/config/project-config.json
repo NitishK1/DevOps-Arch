@@ -1,0 +1,127 @@
+{
+  "project": {
+    "name": "ProjectX",
+    "description": "Order Management System for TechCo",
+    "visibility": "private",
+    "processTemplate": "Agile"
+  },
+  "epic": {
+    "title": "ProjectX - Order Management System",
+    "description": "Develop a comprehensive web application for managing customer orders, including order creation, tracking, and fulfillment",
+    "priority": 1
+  },
+  "userStories": [
+    {
+      "id": "US1",
+      "title": "User Authentication and Authorization",
+      "description": "As a user, I want to securely log in to the system so that I can access my orders and account information",
+      "acceptanceCriteria": [
+        "Users can register with email and password",
+        "Users can log in with valid credentials",
+        "Password reset functionality is available",
+        "Role-based access control is implemented",
+        "Session management is secure"
+      ],
+      "priority": 1,
+      "storyPoints": 8
+    },
+    {
+      "id": "US2",
+      "title": "Create and Submit Orders",
+      "description": "As a customer, I want to create and submit orders for products so that I can purchase items",
+      "acceptanceCriteria": [
+        "Users can browse available products",
+        "Users can add products to cart",
+        "Users can specify quantity and options",
+        "Order summary is displayed before submission",
+        "Confirmation email is sent after order submission"
+      ],
+      "priority": 2,
+      "storyPoints": 13
+    },
+    {
+      "id": "US3",
+      "title": "View and Track Orders",
+      "description": "As a customer, I want to view my order history and track current orders so that I know the status of my purchases",
+      "acceptanceCriteria": [
+        "Users can view list of all their orders",
+        "Order details show items, quantities, and prices",
+        "Real-time order status is displayed",
+        "Tracking information is available for shipped orders",
+        "Users can filter and sort orders"
+      ],
+      "priority": 2,
+      "storyPoints": 8
+    },
+    {
+      "id": "US4",
+      "title": "Order Management for Administrators",
+      "description": "As an administrator, I want to manage all orders in the system so that I can fulfill customer requests",
+      "acceptanceCriteria": [
+        "Admins can view all orders in the system",
+        "Admins can update order status",
+        "Admins can cancel or refund orders",
+        "Admins can generate order reports",
+        "Admins receive notifications for new orders"
+      ],
+      "priority": 3,
+      "storyPoints": 13
+    },
+    {
+      "id": "US5",
+      "title": "Product Catalog Management",
+      "description": "As an administrator, I want to manage the product catalog so that customers can order the correct items",
+      "acceptanceCriteria": [
+        "Admins can add new products",
+        "Admins can update product details and pricing",
+        "Admins can set product availability",
+        "Products can have images and descriptions",
+        "Products can be categorized"
+      ],
+      "priority": 3,
+      "storyPoints": 8
+    }
+  ],
+  "infrastructure": {
+    "staging": {
+      "environment": "staging",
+      "appServicePlan": "projectx-asp-staging",
+      "webAppName": "projectx-staging",
+      "sku": "B1"
+    },
+    "production": {
+      "environment": "production",
+      "appServicePlan": "projectx-asp-prod",
+      "webAppName": "projectx-production",
+      "sku": "S1"
+    }
+  },
+  "repository": {
+    "branches": {
+      "main": {
+        "protected": true,
+        "requirePR": true,
+        "requireReviews": 1
+      },
+      "develop": {
+        "protected": true,
+        "requirePR": true,
+        "requireReviews": 1
+      }
+    }
+  },
+  "pipelines": {
+    "ci": {
+      "name": "ProjectX-CI",
+      "trigger": ["main", "develop", "feature/*"],
+      "pool": "ubuntu-latest",
+      "steps": ["restore", "build", "test", "publish"]
+    },
+    "cd": {
+      "name": "ProjectX-CD",
+      "trigger": "CI",
+      "environments": ["staging", "production"],
+      "approvers": ["admin"]
+    }
+  }
+}

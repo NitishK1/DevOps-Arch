@@ -1,0 +1,362 @@
+{
+  "tasks": [
+    {
+      "userStory": "US1",
+      "userStoryTitle": "User Authentication and Authorization",
+      "tasks": [
+        {
+          "title": "Design database schema for users and roles",
+          "description": "Create database tables for users, roles, permissions, and user sessions. Include fields for email, hashed password, role assignments, and session tokens.",
+          "estimatedHours": 4,
+          "state": "New",
+          "priority": 1,
+          "tags": ["database", "design"]
+        },
+        {
+          "title": "Implement user registration API endpoint",
+          "description": "Create POST /api/auth/register endpoint with email validation, password strength checking, and user creation. Hash passwords using bcrypt.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "authentication"]
+        },
+        {
+          "title": "Implement login API endpoint",
+          "description": "Create POST /api/auth/login endpoint with credential validation, session token generation (JWT), and failed attempt tracking.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "authentication"]
+        },
+        {
+          "title": "Implement password reset functionality",
+          "description": "Create endpoints for password reset request and password reset confirmation. Send reset email with secure token. Token should expire after 1 hour.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "api", "email"]
+        },
+        {
+          "title": "Implement role-based access control middleware",
+          "description": "Create middleware to check user roles and permissions for protected routes. Implement decorators/guards for role checking.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "security", "middleware"]
+        },
+        {
+          "title": "Create login/register UI components",
+          "description": "Build React components for login form, registration form, and password reset form with validation and error handling.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["frontend", "ui", "react"]
+        },
+        {
+          "title": "Write unit tests for authentication",
+          "description": "Create comprehensive unit tests for all authentication endpoints and middleware using Jest/Mocha. Cover success and failure scenarios.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["testing", "backend"]
+        }
+      ]
+    },
+    {
+      "userStory": "US2",
+      "userStoryTitle": "Create and Submit Orders",
+      "tasks": [
+        {
+          "title": "Design order and cart database schema",
+          "description": "Create tables for orders, order_items, shopping_cart, and cart_items. Include relationships and indexes for performance.",
+          "estimatedHours": 4,
+          "state": "New",
+          "priority": 1,
+          "tags": ["database", "design"]
+        },
+        {
+          "title": "Implement product browsing API",
+          "description": "Create GET /api/products endpoint with pagination, filtering, and search capabilities. Include product images and details.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api"]
+        },
+        {
+          "title": "Implement shopping cart API",
+          "description": "Create CRUD endpoints for shopping cart: add item, update quantity, remove item, get cart. Support guest and authenticated users.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "cart"]
+        },
+        {
+          "title": "Implement order creation API",
+          "description": "Create POST /api/orders endpoint to convert cart to order. Validate inventory, calculate totals, apply discounts, and save order.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "orders"]
+        },
+        {
+          "title": "Implement order confirmation email",
+          "description": "Set up email service to send order confirmation with order details, items, and tracking information. Use email template.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "email", "notifications"]
+        },
+        {
+          "title": "Create product catalog UI",
+          "description": "Build product listing page with grid/list view, filters, search, and pagination. Make it responsive and user-friendly.",
+          "estimatedHours": 10,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react"]
+        },
+        {
+          "title": "Create shopping cart UI",
+          "description": "Build shopping cart page showing items, quantities, prices, and total. Allow quantity updates and item removal.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "cart"]
+        },
+        {
+          "title": "Create checkout and order review UI",
+          "description": "Build checkout flow with order summary, payment information form, and order submission. Show loading and success states.",
+          "estimatedHours": 10,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "checkout"]
+        },
+        {
+          "title": "Write tests for order creation flow",
+          "description": "Create unit and integration tests for cart operations and order creation. Test validation, error handling, and edge cases.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["testing", "backend", "frontend"]
+        }
+      ]
+    },
+    {
+      "userStory": "US3",
+      "userStoryTitle": "View and Track Orders",
+      "tasks": [
+        {
+          "title": "Implement order listing API",
+          "description": "Create GET /api/orders endpoint for users to retrieve their orders with pagination, filtering by status, and date range.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "orders"]
+        },
+        {
+          "title": "Implement order details API",
+          "description": "Create GET /api/orders/:id endpoint to retrieve full order details including items, status history, and tracking information.",
+          "estimatedHours": 4,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "orders"]
+        },
+        {
+          "title": "Implement order status tracking system",
+          "description": "Create system to track order status changes with timestamps and history. Store status transitions in database.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "orders", "tracking"]
+        },
+        {
+          "title": "Implement status change notifications",
+          "description": "Set up email notifications to be sent when order status changes. Use email templates for each status type.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "email", "notifications"]
+        },
+        {
+          "title": "Create order history UI",
+          "description": "Build order list page showing user's orders with status badges, dates, and totals. Include filters and search.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "orders"]
+        },
+        {
+          "title": "Create order details UI",
+          "description": "Build order details page showing full order information, items, status timeline, and tracking link. Make it printable.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "orders"]
+        },
+        {
+          "title": "Write tests for order tracking",
+          "description": "Create tests for order retrieval, filtering, and status updates. Test notification delivery.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["testing", "backend"]
+        }
+      ]
+    },
+    {
+      "userStory": "US4",
+      "userStoryTitle": "Order Management for Administrators",
+      "tasks": [
+        {
+          "title": "Implement admin order listing API",
+          "description": "Create GET /api/admin/orders endpoint with advanced filtering, sorting, and search across all orders. Include pagination.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "admin"]
+        },
+        {
+          "title": "Implement order status update API",
+          "description": "Create PATCH /api/admin/orders/:id/status endpoint for admins to update order status with notes and timestamps.",
+          "estimatedHours": 4,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "admin", "orders"]
+        },
+        {
+          "title": "Implement order cancellation and refund API",
+          "description": "Create POST /api/admin/orders/:id/cancel endpoint with refund processing logic and inventory restoration.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "api", "admin", "orders"]
+        },
+        {
+          "title": "Implement order reporting API",
+          "description": "Create endpoints for generating reports: daily/weekly/monthly sales, top products, customer analytics. Support export formats.",
+          "estimatedHours": 10,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "api", "reporting"]
+        },
+        {
+          "title": "Implement real-time order notifications",
+          "description": "Set up WebSocket or SSE for real-time notifications to admins when new orders arrive. Include desktop notifications.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "real-time", "notifications"]
+        },
+        {
+          "title": "Create admin dashboard UI",
+          "description": "Build dashboard showing key metrics: total orders, revenue, pending orders, recent orders. Include charts and graphs.",
+          "estimatedHours": 12,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "admin", "dashboard"]
+        },
+        {
+          "title": "Create admin order management UI",
+          "description": "Build admin order list with advanced filters, batch actions, and quick status updates. Include export functionality.",
+          "estimatedHours": 10,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "admin"]
+        },
+        {
+          "title": "Create reporting UI",
+          "description": "Build reporting interface with date range selection, report type selection, and data visualization. Allow export to CSV/Excel.",
+          "estimatedHours": 10,
+          "state": "New",
+          "priority": 2,
+          "tags": ["frontend", "ui", "react", "reporting"]
+        },
+        {
+          "title": "Write tests for admin functionality",
+          "description": "Create comprehensive tests for admin endpoints, authorization checks, and reporting logic.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["testing", "backend", "admin"]
+        }
+      ]
+    },
+    {
+      "userStory": "US5",
+      "userStoryTitle": "Product Catalog Management",
+      "tasks": [
+        {
+          "title": "Design product database schema",
+          "description": "Create tables for products, product_images, categories, product_variants, and inventory. Include proper indexes.",
+          "estimatedHours": 4,
+          "state": "New",
+          "priority": 1,
+          "tags": ["database", "design"]
+        },
+        {
+          "title": "Implement product CRUD API",
+          "description": "Create endpoints for creating, reading, updating, and deleting products. Include validation and error handling.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "products"]
+        },
+        {
+          "title": "Implement product image upload",
+          "description": "Create image upload endpoint with validation, resizing, and storage (local or cloud). Support multiple images per product.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 1,
+          "tags": ["backend", "api", "file-upload"]
+        },
+        {
+          "title": "Implement category management API",
+          "description": "Create endpoints for managing product categories and subcategories with hierarchical structure.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "api", "categories"]
+        },
+        {
+          "title": "Implement inventory management API",
+          "description": "Create endpoints for managing product inventory, stock levels, and availability. Include low stock alerts.",
+          "estimatedHours": 6,
+          "state": "New",
+          "priority": 2,
+          "tags": ["backend", "api", "inventory"]
+        },
+        {
+          "title": "Create product management UI",
+          "description": "Build admin interface for adding/editing products with form validation, image upload, and rich text editor for descriptions.",
+          "estimatedHours": 12,
+          "state": "New",
+          "priority": 1,
+          "tags": ["frontend", "ui", "react", "admin"]
+        },
+        {
+          "title": "Create category management UI",
+          "description": "Build interface for managing categories with drag-and-drop ordering and hierarchical tree view.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["frontend", "ui", "react", "admin"]
+        },
+        {
+          "title": "Create inventory management UI",
+          "description": "Build interface for managing inventory with bulk updates, low stock warnings, and inventory history.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["frontend", "ui", "react", "admin"]
+        },
+        {
+          "title": "Write tests for product management",
+          "description": "Create tests for product CRUD operations, image upload, category management, and inventory tracking.",
+          "estimatedHours": 8,
+          "state": "New",
+          "priority": 2,
+          "tags": ["testing", "backend"]
+        }
+      ]
+    }
+  ]
+}
