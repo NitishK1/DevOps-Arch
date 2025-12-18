@@ -100,22 +100,40 @@ pipeline {
                     dir("${WORKSPACE_PATH}") {
                         def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
 
-                        if (isUnix()) {
-                            sh """
-                                kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} --record=true || echo "Deployment not found, applying manifests..."
-                                kubectl apply -f k8s/deployment.yaml
-                                kubectl apply -f k8s/service.yaml
-                                kubectl apply -f k8s/hpa.yaml
-                                kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
-                            """
-                        } else {
-                            bat """
-                                kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} --record=true || echo Deployment not found, applying manifests...
-                                kubectl apply -f k8s/deployment.yaml
-                                kubectl apply -f k8s/service.yaml
-                                kubectl apply -f k8s/hpa.yaml
-                                kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
-                            """
+                        try {
+                            if (isUnix()) {
+                                sh """
+                                    # Test kubectl connection
+                                    kubectl cluster-info || (echo "ERROR: Cannot connect to Kubernetes cluster" && exit 1)
+
+                                    # Update deployment image or create if not exists
+                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo "Deployment not found, will create..."
+
+                                    # Apply manifests
+                                    kubectl apply -f k8s/deployment.yaml
+                                    kubectl apply -f k8s/service.yaml
+                                    kubectl apply -f k8s/hpa.yaml
+
+                                    # Wait for rollout
+                                    kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
+                                """
+                            } else {
+                                bat """
+                                    kubectl cluster-info || (echo ERROR: Cannot connect to Kubernetes cluster && exit /b 1)
+                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo Deployment not found, will create...
+                                    kubectl apply -f k8s/deployment.yaml
+                                    kubectl apply -f k8s/service.yaml
+                                    kubectl apply -f k8s/hpa.yaml
+                                    kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
+                                """
+                            }
+                        } catch (Exception e) {
+                            echo "Kubernetes deployment failed: ${e.message}"
+                            echo "IMPORTANT: Configure kubectl access in Jenkins:"
+                            echo "1. Copy your kubeconfig from: %USERPROFILE%\\.kube\\config"
+                            echo "2. Add as Jenkins credential (Secret file)"
+                            echo "3. OR run Jenkins with access to your kubectl config"
+                            throw e
                         }
                     }
                 }
@@ -147,7 +165,11 @@ pipeline {
             script {
                 echo 'Cleaning up...'
                 try {
-                    sh 'docker logout'
+                    if (isUnix()) {
+                        sh 'docker logout || true'
+                    } else {
+                        bat 'docker logout || exit 0'
+                    }
                 } catch (Exception e) {
                     echo "Docker logout failed: ${e.message}"
                 }
@@ -157,7 +179,7 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline failed! Check the logs above for details.'
         }
     }
 }
