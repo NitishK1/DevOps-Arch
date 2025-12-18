@@ -1,0 +1,53 @@
+Problem Statement
+A retail company Abstergo Corp. has recently setup an online shopping portal(website) to sell their
+products. Due to fierce competition, the company wants a solution that can reduce the time and
+effort it needs to enhance the functionality of their website on a regular basis. They are looking for an
+automated way to deploy the new code (for new features) to production website whenever they
+want.
+Business Requirements
+• The team of developers working on new features will merge their code to a GitHub repo.
+• As soon as the code reaches GitHub, using a CI (Continuous Integration) pipeline, setup in Jenkins,
+automated builds will be triggered.
+• The automated builds will frequently deploy new features to the production website.
+• Every build will prepare a Dockerfile and push docker images to docker-hub.
+• Every docker image will be deployed (Continuous Deployment) to a kubernetes-cluster.
+Fork the given repository to your own account and use it as the application for your pipeline project
+GitHub: https://github.com/bhavukm/cicd-pipeline-train-schedule-autodeploy
+
+
+
+Architecture Description:
+
+Here’s a structured text version of the DevOps pipeline and monitoring architecture from your image, formatted for clarity and machine readability:
+
+---
+
+## 🛠️ DevOps Pipeline and Monitoring Architecture
+
+### 👨‍💻 Developers
+- Write and commit code to a **Git** repository (Source Code Repository)
+
+### 🔄 Continuous Integration
+- **Jenkins** pulls code from Git
+- Jenkins triggers builds and tests
+
+### 📦 Continuous Deployment
+- Built images are pushed to **Docker Hub** (Image Repository)
+- Docker Hub serves images to the **Kubernetes Cluster**
+
+### 📈 Continuous Monitoring
+- **Prometheus** monitors:
+  - Jenkins
+  - Docker Hub
+  - Kubernetes Cluster
+- Prometheus collects **Prometheus Data Points**
+
+### 📊 Visualization
+- Prometheus sends metrics to **Grafana**
+- Grafana displays data on a **Grafana Dashboard**
+
+### ⚙️ Kubernetes Cluster
+- Hosts deployed applications
+- Supports **HPA (Horizontal Pod Autoscaler)** for autoscaling based on metrics
+
+---
