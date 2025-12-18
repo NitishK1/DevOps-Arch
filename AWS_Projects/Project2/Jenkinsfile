@@ -99,27 +99,32 @@ pipeline {
                 script {
                     dir("${WORKSPACE_PATH}") {
                         def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
-
-                        try {
+                        
+                        // Use the kubeconfig credential
+                        withCredentials([file(credentialsId: 'localkubeconfig', variable: 'KUBECONFIG')]) {
                             if (isUnix()) {
                                 sh """
+                                    export KUBECONFIG=\${KUBECONFIG}
+                                    
                                     # Test kubectl connection
-                                    kubectl cluster-info || (echo "ERROR: Cannot connect to Kubernetes cluster" && exit 1)
-
+                                    kubectl cluster-info
+                                    
                                     # Update deployment image or create if not exists
                                     kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo "Deployment not found, will create..."
-
+                                    
                                     # Apply manifests
                                     kubectl apply -f k8s/deployment.yaml
                                     kubectl apply -f k8s/service.yaml
                                     kubectl apply -f k8s/hpa.yaml
-
+                                    
                                     # Wait for rollout
                                     kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
                                 """
                             } else {
                                 bat """
-                                    kubectl cluster-info || (echo ERROR: Cannot connect to Kubernetes cluster && exit /b 1)
+                                    set KUBECONFIG=%KUBECONFIG%
+                                    
+                                    kubectl cluster-info
                                     kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo Deployment not found, will create...
                                     kubectl apply -f k8s/deployment.yaml
                                     kubectl apply -f k8s/service.yaml
@@ -127,13 +132,6 @@ pipeline {
                                     kubectl rollout status deployment/abstergo-website-deployment --timeout=2m
                                 """
                             }
-                        } catch (Exception e) {
-                            echo "Kubernetes deployment failed: ${e.message}"
-                            echo "IMPORTANT: Configure kubectl access in Jenkins:"
-                            echo "1. Copy your kubeconfig from: %USERPROFILE%\\.kube\\config"
-                            echo "2. Add as Jenkins credential (Secret file)"
-                            echo "3. OR run Jenkins with access to your kubectl config"
-                            throw e
                         }
                     }
                 }
@@ -144,16 +142,26 @@ pipeline {
             steps {
                 echo 'Verifying deployment...'
                 script {
-                    if (isUnix()) {
-                        sh """
-                            kubectl get pods -l app=abstergo-website
-                            kubectl get svc abstergo-website-service
-                        """
-                    } else {
-                        bat """
-                            kubectl get pods -l app=abstergo-website
-                            kubectl get svc abstergo-website-service
-                        """
+                    withCredentials([file(credentialsId: 'localkubeconfig', variable: 'KUBECONFIG')]) {
+                        if (isUnix()) {
+                            sh """
+                                export KUBECONFIG=\${KUBECONFIG}
+                                kubectl get pods -l app=abstergo-website
+                                kubectl get svc abstergo-website-service
+                                echo ""
+                                echo "Application deployed successfully!"
+                                echo "Access via: kubectl port-forward svc/abstergo-website-service 8081:80"
+                            """
+                        } else {
+                            bat """
+                                set KUBECONFIG=%KUBECONFIG%
+                                kubectl get pods -l app=abstergo-website
+                                kubectl get svc abstergo-website-service
+                                echo.
+                                echo Application deployed successfully!
+                                echo Access via: kubectl port-forward svc/abstergo-website-service 8081:80
+                            """
+                        }
                     }
                 }
             }
