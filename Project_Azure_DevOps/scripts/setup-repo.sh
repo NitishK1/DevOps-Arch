@@ -102,8 +102,11 @@ else
 This commit sets up the complete ProjectX infrastructure as code."
 fi
 
-# Add Azure DevOps remote
-if ! git remote | grep -q "azure"; then
+# Add or update Azure DevOps remote
+if git remote | grep -q "azure"; then
+    echo "Updating Azure DevOps remote URL..."
+    git remote set-url azure "$REPO_URL"
+else
     echo "Adding Azure DevOps remote..."
     git remote add azure "$REPO_URL"
 fi
