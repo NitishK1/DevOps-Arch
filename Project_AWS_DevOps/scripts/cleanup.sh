@@ -152,8 +152,12 @@ echo "Phase 5: Cleaning up local files"
 echo "═══════════════════════════════════════════════════════════════════"
 
 rm -f tfplan
+rm -f terraform.tfstate
 rm -f terraform.tfstate.backup
 echo "✓ Local cleanup complete"
+echo ""
+echo "Note: All Terraform state files have been removed."
+echo "This is important when switching AWS accounts (e.g., after 6-hour rotation)."
 
 # Final summary
 echo ""
