@@ -17,22 +17,26 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${BLUE}Setting up Git repository...${NC}"
 
-# Set defaults
-az devops configure --defaults organization="https://dev.azure.com/$AZURE_DEVOPS_ORG" project="$AZURE_DEVOPS_PROJECT"
+# Set defaults and verify project
+az devops configure --defaults organization=https://dev.azure.com/$AZURE_DEVOPS_ORG project=$AZURE_DEVOPS_PROJECT
+
+# Verify project exists and get current project ID
+PROJECT_ID=$(az devops project show --project "$AZURE_DEVOPS_PROJECT" --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" --query "id" -o tsv)
+echo "Using project ID: $PROJECT_ID"
 
 # Check if repo exists
-REPO_EXISTS=$(az repos list --query "[?name=='$REPO_NAME'].name" -o tsv)
+REPO_EXISTS=$(az repos list --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" --project "$AZURE_DEVOPS_PROJECT" --query "[?name=='$REPO_NAME'].name" -o tsv)
 
 if [ -z "$REPO_EXISTS" ]; then
     echo "Creating repository: $REPO_NAME"
-    az repos create --name "$REPO_NAME" >/dev/null
+    az repos create --name "$REPO_NAME" --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" --project "$AZURE_DEVOPS_PROJECT" >/dev/null
     sleep 5
 else
     echo "Repository already exists: $REPO_NAME"
 fi
 
 # Get repository URL
-REPO_URL=$(az repos show --repository "$REPO_NAME" --query "remoteUrl" -o tsv)
+REPO_URL=$(az repos show --repository "$REPO_NAME" --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" --project "$AZURE_DEVOPS_PROJECT" --query "remoteUrl" -o tsv)
 echo "Repository URL: $REPO_URL"
 
 # Initialize local git if not already initialized
@@ -106,13 +110,19 @@ fi
 
 # Push to Azure Repos
 echo "Pushing to Azure Repos..."
-echo -e "${YELLOW}Note: You may be prompted for credentials${NC}"
-git push azure main -u 2>/dev/null || {
+echo -e "${YELLOW}Note: You will be prompted for credentials${NC}"
+echo "Username: Your Azure DevOps email or just press Enter"
+echo "Password: Use your Personal Access Token (PAT): $AZURE_DEVOPS_PAT"
+echo ""
+
+# Configure git to use the PAT
+git -c http.extraheader="AUTHORIZATION: Basic $(echo -n :$AZURE_DEVOPS_PAT | base64)" push azure main -u || {
     echo ""
-    echo -e "${YELLOW}If push failed due to authentication:${NC}"
-    echo "1. Generate a PAT at: https://dev.azure.com/$AZURE_DEVOPS_ORG/_usersSettings/tokens"
-    echo "2. Use the PAT as password when prompted"
-    echo "3. Or configure git credential helper"
+    echo -e "${YELLOW}Push failed. Trying interactive authentication...${NC}"
+    echo "When prompted:"
+    echo "  Username: (just press Enter or use your email)"
+    echo "  Password: $AZURE_DEVOPS_PAT"
+    git push azure main -u
 }
 
 # Set branch policies (optional - requires API)

@@ -86,11 +86,19 @@ echo -e "${GREEN}✓ Azure DevOps CLI ready${NC}"
 echo ""
 echo -e "${BLUE}► Logging into Azure...${NC}"
 if ! az account show &>/dev/null; then
-    echo "Please login to Azure..."
-    az login
+    echo "Attempting Azure login with tenant: $AZURE_TENANT_ID"
+    if az login --tenant "$AZURE_TENANT_ID" &>/dev/null; then
+        echo -e "${GREEN}✓ Login successful${NC}"
+    else
+        echo -e "${YELLOW}Browser-based login required...${NC}"
+        az login
+    fi
+else
+    echo -e "${GREEN}✓ Already logged in${NC}"
 fi
 
 # Set subscription
+echo "Setting subscription: $AZURE_SUBSCRIPTION_ID"
 az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 CURRENT_SUB=$(az account show --query name -o tsv)
 echo -e "${GREEN}✓ Using subscription: $CURRENT_SUB${NC}"
@@ -127,6 +135,12 @@ echo -e "${BLUE}╚════════════════════�
 bash "$SCRIPT_DIR/setup-pipelines.sh"
 
 echo ""
+echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║  Step 5: Setting up Local Pipeline Agent                  ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+bash "$SCRIPT_DIR/setup-local-agent.sh"
+
+echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║                                                            ║${NC}"
 echo -e "${GREEN}║              ✓ Setup Completed Successfully!               ║${NC}"
@@ -140,7 +154,11 @@ echo -e "${BLUE}Pipelines:${NC} https://dev.azure.com/$AZURE_DEVOPS_ORG/$AZURE_D
 echo ""
 echo -e "${YELLOW}Next Steps:${NC}"
 echo "1. Review work items in Azure Boards"
-echo "2. Trigger the CI/CD pipeline by pushing code"
-echo "3. Approve the production deployment when ready"
+echo "2. Run the CI/CD pipeline (already configured in demo mode)"
+echo "3. Configure production approval gate (optional)"
 echo "4. Run ./scripts/demo.sh for a guided demonstration"
+echo ""
+echo -e "${YELLOW}Demo Mode Active:${NC}"
+echo "Pipeline configured to simulate deployments without Azure resources."
+echo "This demonstrates full DevOps workflow and CI/CD practices."
 echo ""
