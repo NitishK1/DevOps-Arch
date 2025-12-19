@@ -1,0 +1,20 @@
+You are now a part of the DevOps team in Logicworks company, which is a leading AWS consulting and
+Managed Services Provider with 25 years of experience in enterprise IT. Your first project is to replicate
+the current environment on AWS as per the following requirements:
+1. Adoption of IAC (Infrastructure as Code) to facilitate faster replication of environments for
+different customers who may have a need for similar environments.
+2. Infrastructure must include multi-region architecture and needs to run in two different regions
+for High Availability and Disaster Recovery purposes. (Hint: ensure proper networking system)
+3. The applications should be run in a container to prevent errors and inconsistencies. The container
+images  are supposed to be stored in a docker image repository. Additionally, a container
+management system has to be implemented to manage growth in the number of containers in
+the future.
+4. Manual CI/CD pipeline deployments did not fulfill the requirements. Hence there is a need to
+automate the CI/CD pipeline. The CI/CD pipeline should include source, build, stage, manual
+approval and production environment.
+5. The application will be running in two different regions, so the source code repository needs to
+be replicated in the other region as well, in order to pull the code locally within the regions and
+avoid any latency issues.
+6. The infrastructure and the application need to be under continuous monitoring with notification
+mechanism.
+7. It is necessary to have an approved CI/CD pipeline before the code gets pushed to production.
