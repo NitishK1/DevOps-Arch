@@ -54,13 +54,6 @@ echo "  - All associated IAM Roles and Policies"
 echo "═══════════════════════════════════════════════════════════════════"
 echo ""
 
-read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirmation
-
-if [ "$confirmation" != "yes" ]; then
-    echo "Cleanup cancelled."
-    exit 0
-fi
-
 # Navigate to terraform directory
 cd "$PROJECT_ROOT/terraform"
 
@@ -76,17 +69,27 @@ SECONDARY_REGION=${SECONDARY_REGION:-us-west-2}
 
 # Delete ECR images in primary region
 echo "Cleaning ECR in ${PRIMARY_REGION}..."
-aws ecr batch-delete-image \
-    --repository-name ${PROJECT_NAME}-app \
-    --image-ids imageTag=latest \
-    --region ${PRIMARY_REGION} 2>/dev/null || echo "  No images found or already deleted"
+IMAGE_IDS=$(aws ecr list-images --repository-name ${PROJECT_NAME}-app --region ${PRIMARY_REGION} --query 'imageIds[*]' --output json 2>/dev/null || echo "[]")
+if [ "$IMAGE_IDS" != "[]" ] && [ "$IMAGE_IDS" != "" ]; then
+    aws ecr batch-delete-image \
+        --repository-name ${PROJECT_NAME}-app \
+        --image-ids "$IMAGE_IDS" \
+        --region ${PRIMARY_REGION} 2>/dev/null || echo "  No images to delete"
+else
+    echo "  No images found"
+fi
 
 # Delete ECR images in secondary region
 echo "Cleaning ECR in ${SECONDARY_REGION}..."
-aws ecr batch-delete-image \
-    --repository-name ${PROJECT_NAME}-app \
-    --image-ids imageTag=latest \
-    --region ${SECONDARY_REGION} 2>/dev/null || echo "  No images found or already deleted"
+IMAGE_IDS=$(aws ecr list-images --repository-name ${PROJECT_NAME}-app --region ${SECONDARY_REGION} --query 'imageIds[*]' --output json 2>/dev/null || echo "[]")
+if [ "$IMAGE_IDS" != "[]" ] && [ "$IMAGE_IDS" != "" ]; then
+    aws ecr batch-delete-image \
+        --repository-name ${PROJECT_NAME}-app \
+        --image-ids "$IMAGE_IDS" \
+        --region ${SECONDARY_REGION} 2>/dev/null || echo "  No images to delete"
+else
+    echo "  No images found"
+fi
 
 # Pre-cleanup: Empty S3 buckets
 echo ""
@@ -96,7 +99,17 @@ echo "════════════════════════�
 
 BUCKET_NAME="${PROJECT_NAME}-pipeline-artifacts-${PRIMARY_REGION}-${AWS_ACCOUNT_ID}"
 echo "Emptying bucket: ${BUCKET_NAME}"
-aws s3 rm s3://${BUCKET_NAME} --recursive --region ${PRIMARY_REGION} 2>/dev/null || echo "  Bucket not found or already empty"
+
+# Delete all versions and delete markers
+aws s3api list-object-versions --bucket ${BUCKET_NAME} --region ${PRIMARY_REGION} 2>/dev/null | \
+grep -E '"VersionId"|"Key"' | \
+awk '{gsub(/"/, "", $2); gsub(/,/, "", $2); print $2}' | \
+paste - - | \
+while read key version; do
+    aws s3api delete-object --bucket ${BUCKET_NAME} --key "$key" --version-id "$version" --region ${PRIMARY_REGION} 2>/dev/null || true
+done
+
+echo "  Bucket emptied"
 
 # Force delete ECS services to speed up cleanup
 echo ""
@@ -129,10 +142,28 @@ aws ecs update-service \
 echo "Waiting for tasks to drain (30 seconds)..."
 sleep 30
 
+# Delete CloudWatch Log Groups
+echo ""
+echo "═══════════════════════════════════════════════════════════════════"
+echo "Phase 4: Deleting CloudWatch Log Groups"
+echo "═══════════════════════════════════════════════════════════════════"
+
+# Delete log groups in primary region
+echo "Cleaning log groups in ${PRIMARY_REGION}..."
+for log_group in "/aws/vpc/${PROJECT_NAME}-${PRIMARY_REGION}" "/ecs/${PROJECT_NAME}-${PRIMARY_REGION}" "/aws/codebuild/${PROJECT_NAME}-${PRIMARY_REGION}"; do
+    MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$log_group" --region ${PRIMARY_REGION} 2>/dev/null && echo "  Deleted: $log_group" || true
+done
+
+# Delete log groups in secondary region
+echo "Cleaning log groups in ${SECONDARY_REGION}..."
+for log_group in "/aws/vpc/${PROJECT_NAME}-${SECONDARY_REGION}" "/ecs/${PROJECT_NAME}-${SECONDARY_REGION}"; do
+    MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$log_group" --region ${SECONDARY_REGION} 2>/dev/null && echo "  Deleted: $log_group" || true
+done
+
 # Destroy infrastructure with Terraform
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
-echo "Phase 4: Destroying infrastructure with Terraform"
+echo "Phase 5: Destroying infrastructure with Terraform"
 echo "═══════════════════════════════════════════════════════════════════"
 echo "This may take 10-15 minutes..."
 echo ""
@@ -148,7 +179,7 @@ terraform destroy \
 # Clean up local state
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
-echo "Phase 5: Cleaning up local files"
+echo "Phase 6: Cleaning up local files"
 echo "═══════════════════════════════════════════════════════════════════"
 
 rm -f tfplan

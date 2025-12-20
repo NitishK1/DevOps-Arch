@@ -1,5 +1,6 @@
 # Stage 1: Build
-FROM node:18-alpine AS builder
+# Using Amazon ECR Public Gallery to avoid Docker Hub rate limits
+FROM public.ecr.aws/docker/library/node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +11,8 @@ COPY package*.json ./
 RUN npm install --only=production
 
 # Stage 2: Runtime
-FROM node:18-alpine
+# Using Amazon ECR Public Gallery to avoid Docker Hub rate limits
+FROM public.ecr.aws/docker/library/node:18-alpine
 
 # Add metadata
 LABEL maintainer="DevOps Team"

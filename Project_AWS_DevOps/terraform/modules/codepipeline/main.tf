@@ -7,7 +7,7 @@ terraform {
   }
 }
 
-# S3 Bucket for CodePipeline artifacts
+# S3 Bucket for CodePipeline artifacts.
 resource "aws_s3_bucket" "codepipeline" {
   bucket = "${var.project_name}-pipeline-artifacts-${var.region}-${data.aws_caller_identity.current.account_id}"
 
@@ -263,7 +263,8 @@ resource "aws_iam_role_policy" "codepipeline" {
           "ecs:DescribeTasks",
           "ecs:ListTasks",
           "ecs:RegisterTaskDefinition",
-          "ecs:UpdateService"
+          "ecs:UpdateService",
+          "ecs:TagResource"
         ]
         Resource = "*"
       },
@@ -274,10 +275,24 @@ resource "aws_iam_role_policy" "codepipeline" {
         ]
         Resource = "*"
         Condition = {
-          StringEquals = {
-            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          StringEqualsIfExists = {
+            "iam:PassedToService" = [
+              "ecs-tasks.amazonaws.com",
+              "ecs.amazonaws.com"
+            ]
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:ModifyRule"
+        ]
+        Resource = "*"
       },
       {
         Effect = "Allow"

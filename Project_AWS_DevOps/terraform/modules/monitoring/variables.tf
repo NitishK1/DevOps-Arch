@@ -37,3 +37,8 @@ variable "notification_email" {
   description = "Email for alarm notifications"
   type        = string
 }
+
+variable "log_group_name" {
+  description = "CloudWatch log group name for metric filter"
+  type        = string
+}

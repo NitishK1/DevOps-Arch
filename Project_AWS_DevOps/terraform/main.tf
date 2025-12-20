@@ -119,6 +119,7 @@ module "primary_monitoring" {
   ecs_service_name    = module.primary_ecs.service_name
   alb_arn_suffix      = module.primary_ecs.alb_arn_suffix
   target_group_arn_suffix = module.primary_ecs.target_group_arn_suffix
+  log_group_name      = module.primary_ecs.log_group_name
   notification_email  = var.notification_email
 }
 
@@ -185,5 +186,6 @@ module "secondary_monitoring" {
   ecs_service_name    = module.secondary_ecs.service_name
   alb_arn_suffix      = module.secondary_ecs.alb_arn_suffix
   target_group_arn_suffix = module.secondary_ecs.target_group_arn_suffix
+  log_group_name      = module.secondary_ecs.log_group_name
   notification_email  = var.notification_email
 }

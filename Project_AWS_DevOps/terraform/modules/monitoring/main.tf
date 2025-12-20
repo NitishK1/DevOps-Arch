@@ -239,7 +239,7 @@ resource "aws_cloudwatch_metric_alarm" "high_response_time" {
 resource "aws_cloudwatch_log_metric_filter" "application_errors" {
   name           = "${var.project_name}-application-errors-${var.region}"
   pattern        = "[time, request_id, event_type = ERROR*, ...]"
-  log_group_name = "/ecs/${var.project_name}-${var.region}"
+  log_group_name = var.log_group_name
 
   metric_transformation {
     name      = "ApplicationErrors"

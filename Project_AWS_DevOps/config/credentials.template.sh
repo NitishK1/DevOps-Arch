@@ -10,6 +10,11 @@ export AWS_DEFAULT_REGION="us-east-1"
 # Optional: AWS Session Token (if using temporary credentials)
 # export AWS_SESSION_TOKEN="your-session-token-here"
 
+# CodeCommit Git Credentials (generated from IAM -> Security credentials -> HTTPS Git credentials)
+# Generate these at: https://console.aws.amazon.com/iam/home#/security_credentials
+export CODECOMMIT_USERNAME="your-codecommit-username-here"
+export CODECOMMIT_PASSWORD="your-codecommit-password-here"
+
 # Email for SNS notifications
 export NOTIFICATION_EMAIL="your-email@example.com"
 

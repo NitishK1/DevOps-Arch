@@ -14,7 +14,9 @@ phases:
       - REPOSITORY_URI=$ECR_REPOSITORY_URL
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo Logging in to private ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - echo Note - Using ECR Public Gallery for base images - no authentication needed for public images
 
   build:
     commands:
@@ -32,7 +34,8 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - docker push $REPOSITORY_URI:latest
       - cd ..
-      - printf '[{"name":"'$IMAGE_REPO_NAME'-container","imageUri":"'$REPOSITORY_URI':latest"}]' > imagedefinitions.json
+      - printf '[{"name":"logicworks-devops-container","imageUri":"'$REPOSITORY_URI':latest"}]' > imagedefinitions.json
+      - cat imagedefinitions.json
 
 artifacts:
   files:

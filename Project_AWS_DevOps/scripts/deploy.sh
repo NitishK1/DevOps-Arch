@@ -61,6 +61,27 @@ fi
 # Navigate to terraform directory
 cd "$PROJECT_ROOT/terraform"
 
+# Pre-deployment cleanup: Delete any leftover log groups
+echo ""
+echo "═══════════════════════════════════════════════════════════════════"
+echo "Pre-deployment: Cleaning up leftover resources"
+echo "═══════════════════════════════════════════════════════════════════"
+
+PROJECT_NAME=${PROJECT_NAME:-logicworks-devops}
+PRIMARY_REGION=${PRIMARY_REGION:-us-east-1}
+SECONDARY_REGION=${SECONDARY_REGION:-us-east-2}
+
+echo "Checking for leftover CloudWatch Log Groups..."
+for log_group in "/aws/vpc/${PROJECT_NAME}-${PRIMARY_REGION}" "/ecs/${PROJECT_NAME}-${PRIMARY_REGION}" "/aws/codebuild/${PROJECT_NAME}-${PRIMARY_REGION}"; do
+    MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$log_group" --region ${PRIMARY_REGION} 2>/dev/null && echo "  Deleted: $log_group" || true
+done
+
+for log_group in "/aws/vpc/${PROJECT_NAME}-${SECONDARY_REGION}" "/ecs/${PROJECT_NAME}-${SECONDARY_REGION}"; do
+    MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$log_group" --region ${SECONDARY_REGION} 2>/dev/null && echo "  Deleted: $log_group" || true
+done
+
+echo "  Pre-deployment cleanup complete"
+
 # Initialize Terraform
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
@@ -141,8 +162,9 @@ echo "Phase 6: Waiting for ECS services to stabilize"
 echo "═══════════════════════════════════════════════════════════════════"
 echo "This may take a few minutes..."
 
-PRIMARY_CLUSTER=$(terraform output -raw primary_ecs_cluster 2>/dev/null || echo "")
-SECONDARY_CLUSTER=$(terraform output -raw secondary_ecs_cluster 2>/dev/null || echo "")
+# Get outputs safely by redirecting stderr
+PRIMARY_CLUSTER=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw primary_ecs_cluster 2>/dev/null || echo "")
+SECONDARY_CLUSTER=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw secondary_ecs_cluster 2>/dev/null || echo "")
 
 if [ -n "$PRIMARY_CLUSTER" ]; then
     echo "Waiting for primary region service..."
@@ -170,24 +192,29 @@ if [ ! -d ".git" ]; then
 fi
 
 # Configure git credential helper for CodeCommit
-git config --global credential.helper '!aws codecommit credential-helper $@'
-git config --global credential.UseHttpPath true
+git config credential.helper '!aws codecommit credential-helper $@' 2>/dev/null || true
+git config credential.UseHttpPath true 2>/dev/null || true
 
 # Add CodeCommit as remote (primary region)
-if ! git remote get-url codecommit-primary >/dev/null 2>&1; then
-    git remote add codecommit-primary ${PRIMARY_CODECOMMIT}
+PRIMARY_CODECOMMIT=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw primary_codecommit_clone_url 2>/dev/null)
+if [ -n "$PRIMARY_CODECOMMIT" ] && ! git remote get-url codecommit-primary >/dev/null 2>&1; then
+    git remote add codecommit-primary ${PRIMARY_CODECOMMIT} 2>/dev/null || true
     echo "✓ Added primary CodeCommit remote"
 fi
 
-# Push to CodeCommit
+# Push to CodeCommit (non-interactive, with timeout)
 echo "Pushing code to CodeCommit (primary region)..."
-git push codecommit-primary main 2>/dev/null || git push codecommit-primary master:main 2>/dev/null || echo "Note: Push may fail if branch already exists"
+timeout 30 git push codecommit-primary main 2>&1 || timeout 30 git push codecommit-primary master:main 2>&1 || echo "Note: CodeCommit push skipped (optional step)"
 
 # Display summary
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
-terraform output -raw deployment_summary
+cd "$PROJECT_ROOT/terraform" && terraform output -raw deployment_summary 2>/dev/null || echo "Deployment completed"
 echo "═══════════════════════════════════════════════════════════════════"
+
+# Get URLs for display
+PRIMARY_ALB=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw primary_alb_url 2>/dev/null || echo "")
+SECONDARY_ALB=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw secondary_alb_url 2>/dev/null || echo "")
 
 echo ""
 echo "IMPORTANT NEXT STEPS:"
