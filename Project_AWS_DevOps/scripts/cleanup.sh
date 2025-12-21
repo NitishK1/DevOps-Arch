@@ -40,7 +40,7 @@ echo ""
 echo "═══════════════════════════════════════════════════════════════════"
 echo "This will delete all resources in both regions:"
 echo "  - Primary Region: ${PRIMARY_REGION:-us-east-1}"
-echo "  - Secondary Region: ${SECONDARY_REGION:-us-west-2}"
+echo "  - Secondary Region: ${SECONDARY_REGION:-us-east-2}"
 echo ""
 echo "Including:"
 echo "  - ECS Clusters and Services"
@@ -65,7 +65,7 @@ echo "════════════════════════�
 
 PROJECT_NAME=${PROJECT_NAME:-logicworks-devops}
 PRIMARY_REGION=${PRIMARY_REGION:-us-east-1}
-SECONDARY_REGION=${SECONDARY_REGION:-us-west-2}
+SECONDARY_REGION=${SECONDARY_REGION:-us-east-2}
 
 # Delete ECR images in primary region
 echo "Cleaning ECR in ${PRIMARY_REGION}..."
@@ -97,10 +97,10 @@ echo "════════════════════════�
 echo "Phase 2: Emptying S3 buckets"
 echo "═══════════════════════════════════════════════════════════════════"
 
+# Primary region bucket
 BUCKET_NAME="${PROJECT_NAME}-pipeline-artifacts-${PRIMARY_REGION}-${AWS_ACCOUNT_ID}"
-echo "Emptying bucket: ${BUCKET_NAME}"
+echo "Emptying primary bucket: ${BUCKET_NAME}"
 
-# Delete all versions and delete markers
 aws s3api list-object-versions --bucket ${BUCKET_NAME} --region ${PRIMARY_REGION} 2>/dev/null | \
 grep -E '"VersionId"|"Key"' | \
 awk '{gsub(/"/, "", $2); gsub(/,/, "", $2); print $2}' | \
@@ -109,7 +109,21 @@ while read key version; do
     aws s3api delete-object --bucket ${BUCKET_NAME} --key "$key" --version-id "$version" --region ${PRIMARY_REGION} 2>/dev/null || true
 done
 
-echo "  Bucket emptied"
+echo "  Primary bucket emptied"
+
+# Secondary region bucket
+BUCKET_NAME_SECONDARY="${PROJECT_NAME}-pipeline-artifacts-${SECONDARY_REGION}-${AWS_ACCOUNT_ID}"
+echo "Emptying secondary bucket: ${BUCKET_NAME_SECONDARY}"
+
+aws s3api list-object-versions --bucket ${BUCKET_NAME_SECONDARY} --region ${SECONDARY_REGION} 2>/dev/null | \
+grep -E '"VersionId"|"Key"' | \
+awk '{gsub(/"/, "", $2); gsub(/,/, "", $2); print $2}' | \
+paste - - | \
+while read key version; do
+    aws s3api delete-object --bucket ${BUCKET_NAME_SECONDARY} --key "$key" --version-id "$version" --region ${SECONDARY_REGION} 2>/dev/null || true
+done
+
+echo "  Secondary bucket emptied"
 
 # Force delete ECS services to speed up cleanup
 echo ""
@@ -156,9 +170,14 @@ done
 
 # Delete log groups in secondary region
 echo "Cleaning log groups in ${SECONDARY_REGION}..."
-for log_group in "/aws/vpc/${PROJECT_NAME}-${SECONDARY_REGION}" "/ecs/${PROJECT_NAME}-${SECONDARY_REGION}"; do
+for log_group in "/aws/vpc/${PROJECT_NAME}-${SECONDARY_REGION}" "/ecs/${PROJECT_NAME}-${SECONDARY_REGION}" "/aws/codebuild/${PROJECT_NAME}-${SECONDARY_REGION}"; do
     MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$log_group" --region ${SECONDARY_REGION} 2>/dev/null && echo "  Deleted: $log_group" || true
 done
+
+# Delete Lambda log group in primary region
+LAMBDA_LOG_GROUP="/aws/lambda/${PROJECT_NAME}-${ENVIRONMENT:-production}-codecommit-replication"
+echo "Cleaning Lambda log group..."
+MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "$LAMBDA_LOG_GROUP" --region ${PRIMARY_REGION} 2>/dev/null && echo "  Deleted: $LAMBDA_LOG_GROUP" || true
 
 # Destroy infrastructure with Terraform
 echo ""

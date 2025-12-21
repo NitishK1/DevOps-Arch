@@ -153,7 +153,8 @@
 ## Component Details
 
 ### Infrastructure Layer
-- **VPC**: Isolated network in each region with CIDR blocks (10.0.0.0/16, 10.1.0.0/16)
+- **VPC**: Isolated network in each region with CIDR blocks (10.0.0.0/16,
+  10.1.0.0/16)
 - **Subnets**: 2 public + 2 private subnets per region across multiple AZs
 - **NAT Gateways**: 2 per region for high availability
 - **Internet Gateway**: 1 per VPC for internet connectivity
@@ -166,7 +167,8 @@
 
 ### CI/CD Layer
 - **CodeCommit**: Source code repository in both regions
-- **CodePipeline**: 5-stage pipeline (Source → Build → Staging → Approval → Production)
+- **CodePipeline**: 5-stage pipeline (Source → Build → Staging → Approval →
+  Production)
 - **CodeBuild**: Docker image builds with buildspec.yml
 - **EventBridge**: Event-driven pipeline triggers
 
@@ -223,7 +225,8 @@ Lambda Execution → CloudWatch Logs
 
 ## High Availability Features
 
-1. **Multi-AZ Deployment**: Resources spread across 2 availability zones per region
+1. **Multi-AZ Deployment**: Resources spread across 2 availability zones per
+   region
 2. **Regional Isolation**: Complete infrastructure duplication in 2 regions
 3. **Auto-Scaling**: ECS tasks scale 2-10 based on CPU/Memory
 4. **Load Balancing**: ALB distributes traffic with health checks
@@ -241,12 +244,13 @@ Lambda Execution → CloudWatch Logs
 
 ## Disaster Recovery
 
-- **RTO (Recovery Time Objective)**: < 5 minutes (switch traffic to healthy region)
+- **RTO (Recovery Time Objective)**: < 5 minutes (switch traffic to healthy
+  region)
 - **RPO (Recovery Point Objective)**: < 1 minute (code replicated in real-time)
 - **Failover Strategy**: Manual Route53 failover or automatic via health checks
 - **Backup Strategy**: CodeCommit in both regions, ECR images in both regions
 
----
+
 
 ## Simplified Architecture Diagram (Alternative)
 
@@ -283,7 +287,7 @@ For a simpler diagram in your Word document, use this:
     └─────────────┘             └─────────────┘
 ```
 
----
+
 
 ## Technology Stack Summary
 
@@ -312,9 +316,10 @@ For a simpler diagram in your Word document, use this:
 - Git (Version control)
 - Bash scripts (Automation)
 
----
 
-Use this diagram as reference for creating a visual architecture diagram in tools like:
+
+Use this diagram as reference for creating a visual architecture diagram in
+tools like:
 - Microsoft Visio
 - Lucidchart
 - Draw.io

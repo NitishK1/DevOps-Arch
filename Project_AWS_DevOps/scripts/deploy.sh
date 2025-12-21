@@ -197,7 +197,9 @@ git config credential.UseHttpPath true 2>/dev/null || true
 
 # Add CodeCommit as remote (primary region)
 PRIMARY_CODECOMMIT=$(cd "$PROJECT_ROOT/terraform" && terraform output -raw primary_codecommit_clone_url 2>/dev/null)
-if [ -n "$PRIMARY_CODECOMMIT" ] && ! git remote get-url codecommit-primary >/dev/null 2>&1; then
+# Remove existing remote if present to avoid conflicts
+git remote remove codecommit-primary 2>/dev/null || true
+if [ -n "$PRIMARY_CODECOMMIT" ]; then
     git remote add codecommit-primary ${PRIMARY_CODECOMMIT} 2>/dev/null || true
     echo "✓ Added primary CodeCommit remote"
 fi

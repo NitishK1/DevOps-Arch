@@ -25,5 +25,3 @@ export ENVIRONMENT="production"
 # Regions for multi-region deployment
 export PRIMARY_REGION="us-east-1"
 export SECONDARY_REGION="us-east-2"
-export PRIMARY_REGION="us-east-1"
-export SECONDARY_REGION="us-west-2"

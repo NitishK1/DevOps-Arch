@@ -72,8 +72,11 @@ CODECOMMIT_URL="https://${ENCODED_USERNAME}:${ENCODED_PASSWORD}@git-codecommit.$
 CURRENT_URL=$(git remote get-url codecommit-primary 2>/dev/null || echo "")
 
 if [ "$CURRENT_URL" != "$CODECOMMIT_URL" ]; then
-    echo "Updating CodeCommit remote URL..."
-    git remote set-url codecommit-primary "$CODECOMMIT_URL"
+    echo "Configuring CodeCommit remote URL..."
+    # Remove existing remote if present
+    git remote remove codecommit-primary 2>/dev/null || true
+    # Add new remote with credentials
+    git remote add codecommit-primary "$CODECOMMIT_URL"
     echo "✓ Remote URL configured with credentials"
     echo ""
 fi
