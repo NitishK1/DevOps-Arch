@@ -63,8 +63,12 @@ aws codecommit get-repository --repository-name "$REPO_NAME" --region "$REGION" 
 echo "✓ Repository verified"
 echo ""
 
+# URL encode the credentials using Python
+ENCODED_USERNAME=$(python -c "import urllib.parse; print(urllib.parse.quote('$CODECOMMIT_USERNAME', safe=''))")
+ENCODED_PASSWORD=$(python -c "import urllib.parse; print(urllib.parse.quote('$CODECOMMIT_PASSWORD', safe=''))")
+
 # Update remote URL to use HTTPS with embedded credentials
-CODECOMMIT_URL="https://${CODECOMMIT_USERNAME}:${CODECOMMIT_PASSWORD}@git-codecommit.${REGION}.amazonaws.com/v1/repos/${REPO_NAME}"
+CODECOMMIT_URL="https://${ENCODED_USERNAME}:${ENCODED_PASSWORD}@git-codecommit.${REGION}.amazonaws.com/v1/repos/${REPO_NAME}"
 CURRENT_URL=$(git remote get-url codecommit-primary 2>/dev/null || echo "")
 
 if [ "$CURRENT_URL" != "$CODECOMMIT_URL" ]; then

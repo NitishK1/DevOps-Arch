@@ -2,7 +2,7 @@
 
 ## Date: December 20, 2025
 
----
+
 
 ## ✅ COMPLETED TODAY
 
@@ -11,13 +11,14 @@
   - Added pre-deployment cleanup for CloudWatch Log Groups
   - Fixed CodeCommit credential handling
   - Uses local git config (not global)
-  
+
 - ✅ **cleanup.sh** - Automated resource destruction
   - Removed manual confirmation prompt
   - Phase 1: ECR cleanup
   - Phase 2: S3 bucket cleanup (versions + delete markers)
   - Phase 3: ECS service scale-down
-  - Phase 4: CloudWatch Log Groups deletion (with MSYS_NO_PATHCONV=1 for Git Bash)
+  - Phase 4: CloudWatch Log Groups deletion (with MSYS_NO_PATHCONV=1 for Git
+    Bash)
   - Phase 5: Terraform destroy
   - Phase 6: Local cleanup
 
@@ -27,8 +28,10 @@
   - Works with Git Bash on Windows
 
 ### 2. CI/CD Pipeline Fixes
-- ✅ Fixed Docker Hub rate limit → Using ECR Public Gallery (`public.ecr.aws/docker/library/node:18-alpine`)
-- ✅ Fixed container name mismatch → `logicworks-devops-container` in imagedefinitions.json
+- ✅ Fixed Docker Hub rate limit → Using ECR Public Gallery
+  (`public.ecr.aws/docker/library/node:18-alpine`)
+- ✅ Fixed container name mismatch → `logicworks-devops-container` in
+  imagedefinitions.json
 - ✅ Enhanced CodePipeline IAM role:
   - Added `ecs:TagResource`
   - Updated `iam:PassRole` conditions for ECS
@@ -36,12 +39,13 @@
 
 ### 3. Infrastructure Deployment
 - ✅ Multi-region infrastructure deployed:
-  - **Primary (us-east-1)**: VPC, ECS, ALB, ECR, CodeCommit, CodePipeline, CloudWatch
+  - **Primary (us-east-1)**: VPC, ECS, ALB, ECR, CodeCommit, CodePipeline,
+    CloudWatch
   - **Secondary (us-east-2)**: VPC, ECS, ALB, ECR, CloudWatch
 - ✅ Pipeline successfully builds and deploys to PRIMARY region
 - ✅ Monitoring and alerting configured in both regions
 
----
+
 
 ## 🟢 CURRENT STATE
 
@@ -54,16 +58,19 @@
 - Monitoring dashboards active
 
 ### URLs
-- **Primary ALB**: http://logicworks-devops-alb-us-east-1-409649726.us-east-1.elb.amazonaws.com
-- **Secondary ALB**: http://logicworks-devops-alb-us-east-2-1959001207.us-east-2.elb.amazonaws.com
+- **Primary ALB**:
+  http://logicworks-devops-alb-us-east-1-409649726.us-east-1.elb.amazonaws.com
+- **Secondary ALB**:
+  http://logicworks-devops-alb-us-east-2-1959001207.us-east-2.elb.amazonaws.com
 - **Pipeline**: https://console.aws.amazon.com/codesuite/codepipeline/pipelines
 
 ### Credentials
-- AWS credentials: `config/credentials.sh` (includes CodeCommit username/password)
+- AWS credentials: `config/credentials.sh` (includes CodeCommit
+  username/password)
 - Credentials expire: 6-hour rotation
 - Template: `config/credentials.template.sh`
 
----
+
 
 ## ⚠️ REQUIREMENTS GAP
 
@@ -82,7 +89,7 @@
 - Pipeline only deploys to PRIMARY region (should deploy to both)
 - CodeCommit NOT replicated to secondary region
 
----
+
 
 ## 📋 NEXT SESSION PLAN: Option A Implementation
 
@@ -126,7 +133,7 @@ Options:
 
 **Total Time**: ~80 minutes
 
----
+
 
 ## 📁 KEY FILES
 
@@ -151,13 +158,15 @@ Options:
 - `config/credentials.sh` - AWS credentials (not in git)
 - `config/credentials.template.sh` - Template for credentials
 
----
+
 
 ## 🔧 TROUBLESHOOTING NOTES
 
 ### Git Bash on Windows Issues
-- Use `MSYS_NO_PATHCONV=1` prefix for AWS CLI commands with paths starting with `/`
-- Example: `MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "/aws/vpc/..."`
+- Use `MSYS_NO_PATHCONV=1` prefix for AWS CLI commands with paths starting with
+  `/`
+- Example:
+  `MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name "/aws/vpc/..."`
 
 ### CodeCommit Authentication
 - Use Git credentials (username/password), NOT credential helper
@@ -171,7 +180,7 @@ Options:
 - Must be deleted BEFORE Terraform destroy
 - Pre-deployment cleanup in deploy.sh prevents conflicts
 
----
+
 
 ## 📊 RESOURCE COUNT
 
@@ -188,7 +197,7 @@ Options:
 
 **Cost Estimate**: ~$50-100/day (ECS Fargate + NAT Gateways are primary costs)
 
----
+
 
 ## 🎯 SUCCESS CRITERIA (Next Session)
 
@@ -198,18 +207,21 @@ Options:
 - [ ] Single push triggers deployment to both regions
 - [ ] 100% requirements compliance
 
----
+
 
 ## 📝 NOTES
 
 - AWS credentials rotate every 6 hours (AWS Academy)
-- Always source credentials before running scripts: `source config/credentials.sh`
+- Always source credentials before running scripts:
+  `source config/credentials.sh`
 - Test cleanup.sh in non-production to verify automated cleanup
-- Secondary region currently has infrastructure but receives no automatic deployments
-- Pipeline stages: Source → Build → Deploy-Staging (Primary) → Manual Approval → Deploy-Production (Primary)
+- Secondary region currently has infrastructure but receives no automatic
+  deployments
+- Pipeline stages: Source → Build → Deploy-Staging (Primary) → Manual Approval →
+  Deploy-Production (Primary)
 
----
 
-**Session End Time**: December 20, 2025
-**Status**: Infrastructure operational, 80% requirements met
-**Next**: Implement cross-region pipeline deployment (Option A)
+
+**Session End Time**: December 20, 2025 **Status**: Infrastructure operational,
+80% requirements met **Next**: Implement cross-region pipeline deployment
+(Option A)

@@ -173,6 +173,40 @@ module "secondary_codecommit" {
   environment  = var.environment
 }
 
+# CodeCommit Replication from Primary to Secondary
+module "codecommit_replication" {
+  source = "./modules/codecommit-replication"
+  providers = {
+    aws = aws.primary  # Lambda runs in primary region
+  }
+
+  project_name                 = var.project_name
+  environment                  = var.environment
+  source_region                = var.primary_region
+  destination_region           = var.secondary_region
+  source_repository_name       = module.primary_codecommit.repository_name
+  destination_repository_name  = module.secondary_codecommit.repository_name
+  source_repository_arn        = module.primary_codecommit.arn
+  destination_repository_arn   = module.secondary_codecommit.arn
+}
+
+module "secondary_codepipeline" {
+  source = "./modules/codepipeline"
+  providers = {
+    aws = aws.secondary
+  }
+
+  project_name        = var.project_name
+  environment         = var.environment
+  region              = var.secondary_region
+  repository_name     = module.secondary_codecommit.repository_name
+  ecr_repository_name = module.secondary_ecr.repository_name
+  ecr_repository_url  = module.secondary_ecr.repository_url
+  ecs_cluster_name    = module.secondary_ecs.cluster_name
+  ecs_service_name    = module.secondary_ecs.service_name
+  notification_email  = var.notification_email
+}
+
 module "secondary_monitoring" {
   source = "./modules/monitoring"
   providers = {
