@@ -93,8 +93,7 @@ terraform workspace select dev
 terraform apply -var-file="dev.tfvars"
 ```
 
-**Pros**: Single codebase  
-**Cons**: Shared state backend, easy to make mistakes
+**Pros**: Single codebase **Cons**: Shared state backend, easy to make mistakes
 
 ## Recommended Implementation: Directory-Based
 
@@ -315,7 +314,7 @@ variable "aws_account_id" {
 ```terraform
 resource "aws_ecr_repository" "main" {
   name = "${var.project_name}-repo-${var.environment}"  # Include environment
-  
+
   # ... rest of config ...
 }
 ```
@@ -567,29 +566,29 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: dev
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::111111111111:role/GitHubActionsRole
           aws-region: us-east-1
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
-      
+
       - name: Terraform Init
         working-directory: terraform/environments/dev
         run: terraform init
-      
+
       - name: Terraform Plan
         working-directory: terraform/environments/dev
         run: terraform plan -out=tfplan
-      
+
       - name: Terraform Apply
         working-directory: terraform/environments/dev
         run: terraform apply -auto-approve tfplan
@@ -612,7 +611,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     if: github.event.inputs.confirm == 'deploy-to-prod'
-    
+
     steps:
       # ... same as dev but with prod credentials and environment
 ```
@@ -781,11 +780,22 @@ terraform/
 
 **Good Answer:**
 
-*"The current Terraform structure uses a single AWS account with multi-region deployment. While this works for the demo, in a real enterprise scenario, I would restructure it for multi-account deployment across Dev, QA, and Production accounts.*
+*"The current Terraform structure uses a single AWS account with multi-region
+deployment. While this works for the demo, in a real enterprise scenario, I
+would restructure it for multi-account deployment across Dev, QA, and Production
+accounts.*
 
-*I would use a directory-based approach with separate state backends per environment. Each environment would have its own `providers.tf` with assume role configuration to deploy to different AWS accounts. This provides complete isolation, prevents accidental changes to production, and allows environment-specific configurations like smaller resources in dev and full HA setup in production.*
+*I would use a directory-based approach with separate state backends per
+environment. Each environment would have its own `providers.tf` with assume role
+configuration to deploy to different AWS accounts. This provides complete
+isolation, prevents accidental changes to production, and allows
+environment-specific configurations like smaller resources in dev and full HA
+setup in production.*
 
-*For state management, I'd use separate S3 buckets and DynamoDB tables per environment, with appropriate IAM policies to prevent cross-environment access. The shared modules would remain reusable across all environments, maintaining code consistency while allowing environment-specific parameter overrides."*
+*For state management, I'd use separate S3 buckets and DynamoDB tables per
+environment, with appropriate IAM policies to prevent cross-environment access.
+The shared modules would remain reusable across all environments, maintaining
+code consistency while allowing environment-specific parameter overrides."*
 
 **This Shows:**
 - ✅ Understanding of enterprise multi-account strategy
