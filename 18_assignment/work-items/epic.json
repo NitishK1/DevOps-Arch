@@ -1,0 +1,21 @@
+{
+  "epic": {
+    "title": "Math Helper Library Development",
+    "description": "Develop a comprehensive math helper library for Hooli Inc. distributed development team. This library will provide essential mathematical functions to support product development across geographies.",
+    "acceptanceCriteria": [
+      "All required mathematical functions are implemented",
+      "Code is properly tested and documented",
+      "Code is stored in Azure DevOps Git repository",
+      "All team members can access and contribute to the code"
+    ],
+    "priority": "High",
+    "tags": ["development", "math", "library", "distributed-team"]
+  },
+  "details": {
+    "assignedTo": "Development Team",
+    "areaPath": "HooliMathHelper",
+    "iterationPath": "HooliMathHelper\\Sprint 1",
+    "effort": 20,
+    "businessValue": 100
+  }
+}

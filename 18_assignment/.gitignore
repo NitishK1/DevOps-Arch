@@ -1,0 +1,56 @@
+# Credentials (NEVER COMMIT)
+config/credentials.sh
+config/credentials.*.sh
+*.credentials.sh
+.env
+.env.*
+
+# Azure/PAT
+*.pat
+pat.txt
+token.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+.pytest_cache/
+
+# Backups
+backup/
+*.bak
+
+# Local config
+*.local.*
+config/*.local.*
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+temp/
+*.tmp
