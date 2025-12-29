@@ -102,24 +102,34 @@ else
 This commit sets up the complete ProjectX infrastructure as code."
 fi
 
-# Add or update Azure DevOps remote
+# Add or update Azure DevOps remote with embedded PAT
+REPO_URL_WITH_PAT="https://:${AZURE_DEVOPS_PAT}@dev.azure.com/${AZURE_DEVOPS_ORG}/${AZURE_DEVOPS_PROJECT}/_git/${REPO_NAME}"
+
 if git remote | grep -q "azure"; then
-    echo "Updating Azure DevOps remote URL..."
-    git remote set-url azure "$REPO_URL"
+    CURRENT_REMOTE=$(git remote get-url azure)
+    # Check if remote needs updating (compare without PAT for display)
+    if [[ "$CURRENT_REMOTE" != *"dev.azure.com/$AZURE_DEVOPS_ORG"* ]]; then
+        echo "Updating Azure DevOps remote URL..."
+        git remote remove azure
+        git remote add azure "$REPO_URL_WITH_PAT"
+        echo "Remote updated from old organization to: $AZURE_DEVOPS_ORG"
+    else
+        echo "Updating remote with current credentials..."
+        git remote set-url azure "$REPO_URL_WITH_PAT"
+        echo "Azure remote configured with PAT authentication"
+    fi
 else
     echo "Adding Azure DevOps remote..."
-    git remote add azure "$REPO_URL"
+    git remote add azure "$REPO_URL_WITH_PAT"
 fi
 
 # Push to Azure Repos
 echo "Pushing to Azure Repos..."
-echo -e "${YELLOW}Note: You will be prompted for credentials${NC}"
-echo "Username: Your Azure DevOps email or just press Enter"
-echo "Password: Use your Personal Access Token (PAT): $AZURE_DEVOPS_PAT"
+echo "Using PAT from credentials.sh for authentication..."
 echo ""
 
-# Configure git to use the PAT
-git -c http.extraheader="AUTHORIZATION: Basic $(echo -n :$AZURE_DEVOPS_PAT | base64)" push azure main -u || {
+# Push with credentials already embedded in URL
+git push azure main -u 2>&1 || {
     echo ""
     echo -e "${YELLOW}Push failed. Trying interactive authentication...${NC}"
     echo "When prompted:"

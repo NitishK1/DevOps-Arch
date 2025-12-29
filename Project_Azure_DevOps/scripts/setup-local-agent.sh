@@ -40,16 +40,26 @@ if [ -f "$AGENT_DIR/.agent" ]; then
     echo ""
 
     # Check if agent is running
-    if pgrep -f "Agent.Listener" > /dev/null; then
-        echo -e "${GREEN}✓ Agent is currently running${NC}"
-    else
-        echo -e "${YELLOW}⚠ Agent is configured but not running${NC}"
-        echo ""
-        echo "To start the agent, run:"
-        echo "  cd $AGENT_DIR"
-        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
-            echo "  ./run.cmd"
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - use tasklist
+        if tasklist //FI "IMAGENAME eq Agent.Listener.exe" 2>/dev/null | grep -q "Agent.Listener"; then
+            echo -e "${GREEN}✓ Agent is currently running${NC}"
         else
+            echo -e "${YELLOW}⚠ Agent is configured but not running${NC}"
+            echo ""
+            echo "To start the agent, run:"
+            echo "  cd $AGENT_DIR"
+            echo "  ./run.cmd"
+        fi
+    else
+        # Linux/Mac - use pgrep
+        if pgrep -f "Agent.Listener" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Agent is currently running${NC}"
+        else
+            echo -e "${YELLOW}⚠ Agent is configured but not running${NC}"
+            echo ""
+            echo "To start the agent, run:"
+            echo "  cd $AGENT_DIR"
             echo "  ./run.sh"
         fi
     fi
@@ -80,9 +90,9 @@ fi
 # Extract agent
 echo -e "${BLUE}► Extracting agent...${NC}"
 if command -v unzip &> /dev/null; then
-    unzip -o -q agent.zip
+    unzip -o -q agent.zip 2>&1 | grep -v "backslashes as path separators" || true
 elif command -v powershell.exe &> /dev/null; then
-    powershell.exe -Command "Expand-Archive -Path 'agent.zip' -DestinationPath '.' -Force"
+    powershell.exe -Command "Expand-Archive -Path 'agent.zip' -DestinationPath '.' -Force" 2>&1 || true
 else
     echo -e "${RED}✗ No extraction tool found${NC}"
     exit 1
@@ -115,11 +125,13 @@ echo "  Agent: $AGENT_NAME"
 echo ""
 
 if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
-    # Windows configuration
-    cmd.exe //c "$CONFIG_SCRIPT --unattended --url $SERVER_URL --auth pat --token $AZURE_DEVOPS_PAT --pool $AGENT_POOL --agent $AGENT_NAME --runAsService --replace --acceptTeeEula"
+    # Windows configuration (without service for demo)
+    cd "$AGENT_DIR"
+    cmd.exe //c "config.cmd --unattended --url $SERVER_URL --auth pat --token $AZURE_DEVOPS_PAT --pool $AGENT_POOL --agent $AGENT_NAME --replace --acceptTeeEula"
 else
     # Linux/Mac configuration
-    $CONFIG_SCRIPT --unattended \
+    cd "$AGENT_DIR"
+    ./config.sh --unattended \
         --url "$SERVER_URL" \
         --auth pat \
         --token "$AZURE_DEVOPS_PAT" \
@@ -131,6 +143,28 @@ fi
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Agent configured successfully${NC}"
+    echo ""
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}Agent Setup Complete - Manual Start Required${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "The agent has been configured but NOT started automatically."
+    echo ""
+    echo "To start the agent manually:"
+    echo ""
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        echo "  1. Open a new terminal window"
+        echo "  2. cd $AGENT_DIR"
+        echo "  3. Run: ./run.cmd"
+    else
+        echo "  1. Open a new terminal window"
+        echo "  2. cd $AGENT_DIR"
+        echo "  3. Run: ./run.sh"
+    fi
+    echo ""
+    echo "The agent will run in that terminal and process pipeline jobs."
+    echo "Keep that terminal open while running pipelines."
+    echo ""
 else
     echo -e "${RED}✗ Agent configuration failed${NC}"
     echo ""
@@ -143,26 +177,6 @@ else
     echo "   Agent pool: $AGENT_POOL"
     echo "   Agent name: $AGENT_NAME"
     exit 1
-fi
-
-# Start agent in background
-echo ""
-echo -e "${BLUE}► Starting agent...${NC}"
-
-if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
-    # Windows - start in new window
-    cmd.exe //c "start \"Azure Pipeline Agent\" $RUN_SCRIPT"
-    echo -e "${GREEN}✓ Agent started in new window${NC}"
-else
-    # Linux/Mac - start as service or background process
-    if [ -f "./svc.sh" ]; then
-        sudo ./svc.sh install
-        sudo ./svc.sh start
-        echo -e "${GREEN}✓ Agent started as service${NC}"
-    else
-        nohup $RUN_SCRIPT > agent.log 2>&1 &
-        echo -e "${GREEN}✓ Agent started in background${NC}"
-    fi
 fi
 
 echo ""

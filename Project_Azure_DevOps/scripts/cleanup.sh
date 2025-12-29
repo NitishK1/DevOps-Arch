@@ -68,13 +68,18 @@ if [ -d "$AGENT_DIR" ]; then
     cd "$AGENT_DIR"
 
     # Stop agent
-    if pgrep -f "Agent.Listener" > /dev/null; then
-        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - check if agent is running using tasklist
+        if tasklist //FI "IMAGENAME eq Agent.Listener.exe" 2>/dev/null | grep -q "Agent.Listener"; then
             taskkill //F //IM Agent.Listener.exe 2>/dev/null || true
-        else
-            pkill -f Agent.Listener || true
+            echo -e "${GREEN}✓ Agent stopped${NC}"
         fi
-        echo -e "${GREEN}✓ Agent stopped${NC}"
+    else
+        # Linux/Mac - use pgrep
+        if pgrep -f "Agent.Listener" > /dev/null 2>&1; then
+            pkill -f Agent.Listener || true
+            echo -e "${GREEN}✓ Agent stopped${NC}"
+        fi
     fi
 
     # Unconfigure agent
@@ -122,6 +127,21 @@ else
     echo "Resource group does not exist or already deleted"
 fi
 
+# Logout from Azure
+echo ""
+echo "Logging out from Azure..."
+az logout 2>/dev/null || echo "Already logged out from Azure"
+echo -e "${GREEN}✓ Logged out from Azure${NC}"
+
+# Clear Git credentials
+echo ""
+echo "Clearing Git credentials..."
+git credential reject <<EOF 2>/dev/null || true
+protocol=https
+host=dev.azure.com
+EOF
+echo -e "${GREEN}✓ Git credentials cleared${NC}"
+
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║              Cleanup Complete!                             ║${NC}"
@@ -135,6 +155,8 @@ echo "  ✓ Git repository and all code"
 echo "  ✓ CI/CD pipelines and environments"
 echo "  ✓ Azure Resource Group: $AZURE_RESOURCE_GROUP"
 echo "  ✓ All Azure resources (Web Apps, App Service Plans)"
+echo "  ✓ Azure login session"
+echo "  ✓ Git credentials cache"
 echo ""
 echo "What was preserved:"
 echo "  ✓ Local project files"
@@ -149,3 +171,5 @@ echo ""
 echo "To recreate everything with the same credentials, run:"
 echo "  cd $PROJECT_ROOT"
 echo "  ./scripts/quickstart.sh"
+echo ""
+echo -e "${YELLOW}Note: You will need to login again with az login${NC}"

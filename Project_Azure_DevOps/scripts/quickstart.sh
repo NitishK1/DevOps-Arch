@@ -85,16 +85,47 @@ echo -e "${GREEN}✓ Azure DevOps CLI ready${NC}"
 # Login to Azure
 echo ""
 echo -e "${BLUE}► Logging into Azure...${NC}"
-if ! az account show &>/dev/null; then
-    echo "Attempting Azure login with tenant: $AZURE_TENANT_ID"
-    if az login --tenant "$AZURE_TENANT_ID" &>/dev/null; then
-        echo -e "${GREEN}✓ Login successful${NC}"
+
+# Check if logged in with correct subscription
+set +e  # Temporarily disable exit on error
+CURRENT_SUB_ID=$(az account show --query id -o tsv 2>/dev/null)
+set -e  # Re-enable exit on error
+
+if [ -z "$CURRENT_SUB_ID" ] || [ "$CURRENT_SUB_ID" != "$AZURE_SUBSCRIPTION_ID" ]; then
+    if [ -z "$CURRENT_SUB_ID" ]; then
+        echo "Not logged in to Azure"
     else
-        echo -e "${YELLOW}Browser-based login required...${NC}"
-        az login
+        echo "Need to login to correct subscription..."
     fi
+    echo "Logging in with tenant: $AZURE_TENANT_ID"
+    echo ""
+    echo "Choose login method:"
+    echo "1) Browser-based login (default)"
+    echo "2) Device code login"
+    read -p "Enter choice [1-2]: " login_choice
+    
+    set +e  # Temporarily disable exit on error
+    case $login_choice in
+        2)
+            echo "Using device code authentication..."
+            az login --tenant "$AZURE_TENANT_ID" --use-device-code
+            LOGIN_RESULT=$?
+            ;;
+        *)
+            echo "Using browser-based authentication..."
+            az login --tenant "$AZURE_TENANT_ID"
+            LOGIN_RESULT=$?
+            ;;
+    esac
+    set -e  # Re-enable exit on error
+    
+    if [ $LOGIN_RESULT -ne 0 ]; then
+        echo -e "${RED}✗ Login failed${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Login successful${NC}"
 else
-    echo -e "${GREEN}✓ Already logged in${NC}"
+    echo -e "${GREEN}✓ Already logged in to correct subscription${NC}"
 fi
 
 # Set subscription

@@ -35,10 +35,32 @@ EPIC_TYPE="Epic"
 STORY_TYPE="User Story"
 echo "Using Agile process template"
 
+# Check if Epic already exists
+echo "Checking for existing work items..."
+EPIC_TITLE="ProjectX - Order Management System"
+
+# Query for existing work items with the ProjectX Epic title
+EXISTING_COUNT=$(az boards query --wiql "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Epic' AND [System.Title] CONTAINS 'ProjectX'" \
+    --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" \
+    -p "$AZURE_DEVOPS_PROJECT" \
+    --query "length(workItems)" -o tsv 2>/dev/null || echo "0")
+
+if [ "$EXISTING_COUNT" -gt 0 ]; then
+    echo -e "${YELLOW}✓ Work items already exist (found $EXISTING_COUNT Epic(s)), skipping creation${NC}"
+    echo ""
+    echo "═══════════════════════════════════════════════════════"
+    echo "Work items already configured!"
+    echo "═══════════════════════════════════════════════════════"
+    echo ""
+    echo "View in Azure Boards:"
+    echo "https://dev.azure.com/$AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT/_boards/board/t/Backlog%20items/"
+    exit 0
+fi
+
 # Create main Epic
 echo "Creating Epic..."
 EPIC_ID=$(az boards work-item create \
-    --title "ProjectX - Order Management System" \
+    --title "$EPIC_TITLE" \
     --type "$EPIC_TYPE" \
     --description "Develop a comprehensive web application for managing customer orders. This is the main epic for the entire project." \
     --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" \
