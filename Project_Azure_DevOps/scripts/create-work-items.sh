@@ -39,11 +39,12 @@ echo "Using Agile process template"
 echo "Checking for existing work items..."
 EPIC_TITLE="ProjectX - Order Management System"
 
-# Query for existing work items with the ProjectX Epic title
-EXISTING_COUNT=$(az boards query --wiql "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Epic' AND [System.Title] CONTAINS 'ProjectX'" \
+# Query for existing Epic work items
+EXISTING_COUNT=$(az boards query \
+    --wiql "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Epic'" \
     --org "https://dev.azure.com/$AZURE_DEVOPS_ORG" \
     -p "$AZURE_DEVOPS_PROJECT" \
-    --query "length(workItems)" -o tsv 2>/dev/null || echo "0")
+    --query "length(@)" -o tsv 2>/dev/null || echo "0")
 
 if [ "$EXISTING_COUNT" -gt 0 ]; then
     echo -e "${YELLOW}✓ Work items already exist (found $EXISTING_COUNT Epic(s)), skipping creation${NC}"

@@ -103,7 +103,7 @@ if [ -z "$CURRENT_SUB_ID" ] || [ "$CURRENT_SUB_ID" != "$AZURE_SUBSCRIPTION_ID" ]
     echo "1) Browser-based login (default)"
     echo "2) Device code login"
     read -p "Enter choice [1-2]: " login_choice
-    
+
     set +e  # Temporarily disable exit on error
     case $login_choice in
         2)
@@ -118,7 +118,7 @@ if [ -z "$CURRENT_SUB_ID" ] || [ "$CURRENT_SUB_ID" != "$AZURE_SUBSCRIPTION_ID" ]
             ;;
     esac
     set -e  # Re-enable exit on error
-    
+
     if [ $LOGIN_RESULT -ne 0 ]; then
         echo -e "${RED}✗ Login failed${NC}"
         exit 1
