@@ -44,19 +44,20 @@ pipeline {
                 echo 'Building Docker image...'
                 script {
                     dir("${WORKSPACE_PATH}") {
-                        // Get Docker Hub credentials if available
-                        def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
-
-                        if (isUnix()) {
-                            sh """
-                                docker build -t ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} .
-                                docker tag ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} ${dockerhubUsername}/${IMAGE_NAME}:latest
-                            """
-                        } else {
-                            bat """
-                                docker build -t ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} .
-                                docker tag ${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} ${dockerhubUsername}/${IMAGE_NAME}:latest
-                            """
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                                         usernameVariable: 'DOCKER_USER',
+                                                         passwordVariable: 'DOCKER_PASS')]) {
+                            if (isUnix()) {
+                                sh """
+                                    docker build -t \${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} .
+                                    docker tag \${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} \${DOCKER_USER}/${IMAGE_NAME}:latest
+                                """
+                            } else {
+                                bat """
+                                    docker build -t %DOCKER_USER%/${IMAGE_NAME}:${IMAGE_TAG} .
+                                    docker tag %DOCKER_USER%/${IMAGE_NAME}:${IMAGE_TAG} %DOCKER_USER%/${IMAGE_NAME}:latest
+                                """
+                            }
                         }
                     }
                 }
@@ -64,11 +65,6 @@ pipeline {
         }
 
         stage('Push to Docker Hub') {
-            when {
-                expression {
-                    return env.DOCKERHUB_USERNAME != null && env.DOCKERHUB_USERNAME != 'local'
-                }
-            }
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
                 script {
@@ -98,10 +94,13 @@ pipeline {
                 echo 'Deploying to Kubernetes cluster...'
                 script {
                     dir("${WORKSPACE_PATH}") {
-                        def dockerhubUsername = env.DOCKERHUB_USERNAME ?: 'local'
-
                         // Use the kubeconfig credential
-                        withCredentials([file(credentialsId: 'localkubeconfig', variable: 'KUBECONFIG')]) {
+                        withCredentials([
+                            file(credentialsId: 'localkubeconfig', variable: 'KUBECONFIG'),
+                            usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')
+                        ]) {
                             if (isUnix()) {
                                 sh """
                                     export KUBECONFIG=\${KUBECONFIG}
@@ -110,7 +109,7 @@ pipeline {
                                     kubectl cluster-info
 
                                     # Update deployment image or create if not exists
-                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo "Deployment not found, will create..."
+                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=\${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG} || echo "Deployment not found, will create..."
 
                                     # Apply manifests
                                     kubectl apply -f k8s/deployment.yaml
@@ -125,7 +124,7 @@ pipeline {
                                     set KUBECONFIG=%KUBECONFIG%
 
                                     kubectl cluster-info
-                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=${dockerhubUsername}/${IMAGE_NAME}:${IMAGE_TAG} || echo Deployment not found, will create...
+                                    kubectl set image deployment/abstergo-website-deployment abstergo-website=%DOCKER_USER%/${IMAGE_NAME}:${IMAGE_TAG} || echo Deployment not found, will create...
                                     kubectl apply -f k8s/deployment.yaml
                                     kubectl apply -f k8s/service.yaml
                                     kubectl apply -f k8s/hpa.yaml
