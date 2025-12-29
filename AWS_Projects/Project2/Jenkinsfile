@@ -44,7 +44,7 @@ pipeline {
                 echo 'Building Docker image...'
                 script {
                     dir("${WORKSPACE_PATH}") {
-                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials-jenkins',
                                                          usernameVariable: 'DOCKER_USER',
                                                          passwordVariable: 'DOCKER_PASS')]) {
                             if (isUnix()) {
@@ -68,18 +68,30 @@ pipeline {
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials-jenkins',
                                                      usernameVariable: 'DOCKER_USER',
                                                      passwordVariable: 'DOCKER_PASS')]) {
                         if (isUnix()) {
                             sh """
+                                echo "Logging in to Docker Hub as: \${DOCKER_USER}"
                                 echo \${DOCKER_PASS} | docker login -u \${DOCKER_USER} --password-stdin
+                                if [ \$? -ne 0 ]; then
+                                    echo "Docker login failed!"
+                                    exit 1
+                                fi
+                                echo "Login successful, pushing images..."
                                 docker push \${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
                                 docker push \${DOCKER_USER}/${IMAGE_NAME}:latest
                             """
                         } else {
                             bat """
+                                echo Logging in to Docker Hub as: %DOCKER_USER%
                                 echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                                if errorlevel 1 (
+                                    echo Docker login failed!
+                                    exit /b 1
+                                )
+                                echo Login successful, pushing images...
                                 docker push %DOCKER_USER%/${IMAGE_NAME}:${IMAGE_TAG}
                                 docker push %DOCKER_USER%/${IMAGE_NAME}:latest
                             """
@@ -97,7 +109,7 @@ pipeline {
                         // Use the kubeconfig credential
                         withCredentials([
                             file(credentialsId: 'localkubeconfig', variable: 'KUBECONFIG'),
-                            usernamePassword(credentialsId: 'dockerhub-credentials',
+                            usernamePassword(credentialsId: 'dockerhub-credentials-jenkins',
                                            usernameVariable: 'DOCKER_USER',
                                            passwordVariable: 'DOCKER_PASS')
                         ]) {
