@@ -1,9 +1,0 @@
-# No external dependencies required for basic functionality
-# Python standard library (math) is sufficient
-
-# Optional: For enhanced testing
-# unittest (included in Python standard library)
-
-# If you want to add more advanced testing capabilities:
-# pytest>=7.0.0
-# pytest-cov>=4.0.0
